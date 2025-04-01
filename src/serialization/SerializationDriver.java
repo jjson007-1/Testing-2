@@ -12,6 +12,11 @@ public class SerializationDriver {
 
 		User.createUser(usersList);
 
+		ArrayList<Customer> customersList = new ArrayList<>();
+
+		customersList.add(new Customer("JOHNSON KING", "1234212", "jking@gmail.com"));
+		Customer.createCustomer(customersList);
+
 	}
 
 }
