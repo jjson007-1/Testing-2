@@ -331,7 +331,7 @@ public class EventManagementGUI extends JFrame implements ActionListener {
         String[] customerNames = new String[customersList.size()];
         for (int i = 0; i < customersList.size(); i++) {
             Customer customer = customersList.get(i);
-            customerNames[i] = customer.getId() + " - " + customer.getFirstName() + " " + customer.getLastName();
+            customerNames[i] = customer.getId() + " - " + customer.getFullName() + " ";
         }
         
         JComboBox<String> customerBox = new JComboBox<>(customerNames);

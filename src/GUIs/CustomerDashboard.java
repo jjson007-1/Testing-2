@@ -26,6 +26,7 @@ import javax.swing.table.DefaultTableModel;
 
 import serialization.Customer;
 import serialization.Event;
+import GUIs.EventManagementGUI;
 
 /**
  * Dashboard for customers to manage their events and rentals.
@@ -89,10 +90,9 @@ public class CustomerDashboard extends BaseGUI implements ActionListener {
         // For now, we'll create a placeholder customer
         currentCustomer = new Customer();
         currentCustomer.setId(customerId);
-        currentCustomer.setFirstName("John");
-        currentCustomer.setLastName("Doe");
+        currentCustomer.setFullName("John");
         currentCustomer.setEmail("john.doe@example.com");
-        currentCustomer.setPhone("123-456-7890");
+        currentCustomer.setPhone(1234567890);
     }
     
     @Override
@@ -135,7 +135,7 @@ public class CustomerDashboard extends BaseGUI implements ActionListener {
     @Override
     protected void setupLayout() {
         // Add welcome label to sidebar
-        JLabel welcomeLabel = new JLabel("Welcome, " + currentCustomer.getFirstName());
+        JLabel welcomeLabel = new JLabel("Welcome, " + currentCustomer.getFullName());
         welcomeLabel.setForeground(LIGHT_COLOR);
         welcomeLabel.setFont(TITLE_FONT);
         welcomeLabel.setAlignmentX(CENTER_ALIGNMENT);
@@ -369,13 +369,13 @@ public class CustomerDashboard extends BaseGUI implements ActionListener {
         
         detailsPanel.add(new JLabel(String.valueOf(currentCustomer.getId())), gbc);
         gbc.gridy++;
-        detailsPanel.add(new JLabel(currentCustomer.getFirstName()), gbc);
+        detailsPanel.add(new JLabel(currentCustomer.getFullName()), gbc);
         gbc.gridy++;
-        detailsPanel.add(new JLabel(currentCustomer.getLastName()), gbc);
+        detailsPanel.add(new JLabel(currentCustomer.getFullName()), gbc);
         gbc.gridy++;
         detailsPanel.add(new JLabel(currentCustomer.getEmail()), gbc);
         gbc.gridy++;
-        detailsPanel.add(new JLabel(currentCustomer.getPhone()), gbc);
+        detailsPanel.add(new JLabel(String.valueOf(currentCustomer.getPhone())), gbc);
         
         // Edit profile button
         gbc.gridx = 0;

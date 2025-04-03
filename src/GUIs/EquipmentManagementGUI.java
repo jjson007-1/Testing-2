@@ -1,8 +1,11 @@
 package GUIs;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -14,7 +17,9 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -24,12 +29,13 @@ import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 
+import serialization.DataManager;
 import serialization.Equipment;
 
 /**
  * GUI for managing equipment inventory
  */
-public class EquipmentManagementGUI extends BaseGUI implements ActionListener {
+public class EquipmentManagementGUI extends JFrame implements ActionListener {
     // Components
     private JPanel mainPanel;
     private JTable equipmentTable;
@@ -40,8 +46,13 @@ public class EquipmentManagementGUI extends BaseGUI implements ActionListener {
     private JButton maintenanceButton;
     private JButton backButton;
     
-    // Equipment data
-    private ArrayList<Equipment> equipmentList;
+    // Data manager
+    private DataManager dataManager;
+    
+    // Colors
+    private final Color PRIMARY_COLOR = new Color(0, 112, 116);
+    private final Color SECONDARY_COLOR = new Color(255, 100, 50);
+    private final Color NEUTRAL_COLOR = new Color(70, 70, 70);
     
     // Table column names
     private final String[] columnNames = {
@@ -52,10 +63,13 @@ public class EquipmentManagementGUI extends BaseGUI implements ActionListener {
      * Constructor
      */
     public EquipmentManagementGUI() {
-        super("Equipment Management", 900, 600);
+        this.setTitle("Equipment Management");
+        this.setSize(900, 600);
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.setLocationRelativeTo(null);
         
-        // Load equipment data
-        loadEquipmentData();
+        // Get data manager instance
+        dataManager = DataManager.getInstance();
         
         initComponents();
         setupLayout();
@@ -65,23 +79,14 @@ public class EquipmentManagementGUI extends BaseGUI implements ActionListener {
     }
     
     /**
-     * Load equipment data from storage
+     * Initialize all UI components
      */
-    private void loadEquipmentData() {
-        // This should load equipment data from serialized file
-        // For now, create some sample data
-        equipmentList = new ArrayList<>();
-        
-        equipmentList.add(new Equipment(1, "Speakers", "High-quality sound system", 50.0, "Available", "Good"));
-        equipmentList.add(new Equipment(2, "Projector", "4K HD projector", 80.0, "Available", "Good"));
-        equipmentList.add(new Equipment(3, "Tables", "Round tables for seating", 15.0, "Rented", "Good"));
-        equipmentList.add(new Equipment(4, "Chairs", "Comfortable seating", 5.0, "Under Maintenance", "Fair"));
-    }
-    
-    @Override
-    protected void initComponents() {
+    private void initComponents() {
         mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        
+        // Get equipment from data manager
+        ArrayList<Equipment> equipmentList = dataManager.getEquipment();
         
         // Create the table model
         Object[][] data = new Object[equipmentList.size()][6];
@@ -104,25 +109,27 @@ public class EquipmentManagementGUI extends BaseGUI implements ActionListener {
         
         equipmentTable = new JTable(tableModel);
         equipmentTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        equipmentTable.setFont(NORMAL_FONT);
-        equipmentTable.getTableHeader().setFont(TITLE_FONT);
+        equipmentTable.setFont(new Font("Arial", Font.PLAIN, 14));
+        equipmentTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
         equipmentTable.setRowHeight(30);
         equipmentTable.setAutoCreateRowSorter(true);
         
         // Create buttons
-        addButton = createStyledButton("Add Equipment", SECONDARY_COLOR, this);
-        editButton = createStyledButton("Edit Equipment", PRIMARY_COLOR, this);
-        deleteButton = createStyledButton("Delete Equipment", NEUTRAL_COLOR, this);
-        maintenanceButton = createStyledButton("Maintenance", PRIMARY_COLOR, this);
-        backButton = createStyledButton("Back to Dashboard", NEUTRAL_COLOR, this);
+        addButton = createStyledButton("Add Equipment", SECONDARY_COLOR);
+        editButton = createStyledButton("Edit Equipment", PRIMARY_COLOR);
+        deleteButton = createStyledButton("Delete Equipment", NEUTRAL_COLOR);
+        maintenanceButton = createStyledButton("Maintenance", PRIMARY_COLOR);
+        backButton = createStyledButton("Back", NEUTRAL_COLOR);
     }
     
-    @Override
-    protected void setupLayout() {
+    /**
+     * Set up the layout of all components
+     */
+    private void setupLayout() {
         // Header panel with title and back button
         JPanel headerPanel = new JPanel(new BorderLayout());
         JLabel titleLabel = new JLabel("Equipment Management");
-        titleLabel.setFont(HEADER_FONT);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
         headerPanel.add(titleLabel, BorderLayout.WEST);
         headerPanel.add(backButton, BorderLayout.EAST);
         
@@ -149,13 +156,30 @@ public class EquipmentManagementGUI extends BaseGUI implements ActionListener {
         this.setContentPane(mainPanel);
     }
     
-    @Override
-    protected void setupEventHandlers() {
+    /**
+     * Set up all event handlers
+     */
+    private void setupEventHandlers() {
         addButton.addActionListener(this);
         editButton.addActionListener(this);
         deleteButton.addActionListener(this);
         maintenanceButton.addActionListener(this);
         backButton.addActionListener(this);
+    }
+    
+    /**
+     * Creates a styled button with the given text and color
+     */
+    private JButton createStyledButton(String text, Color color) {
+        JButton button = new JButton(text);
+        button.setForeground(Color.WHITE);
+        button.setFont(new Font("Arial", Font.BOLD, 14));
+        button.setFocusPainted(false);
+        button.setBackground(color);
+        button.setOpaque(true);
+        button.setBorderPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return button;
     }
     
     @Override
@@ -173,17 +197,28 @@ public class EquipmentManagementGUI extends BaseGUI implements ActionListener {
                     showEquipmentDialog(selectedEquipment);
                 }
             } else {
-                showErrorMessage("Please select an equipment item to edit.");
+                JOptionPane.showMessageDialog(this, 
+                    "Please select an equipment item to edit.", 
+                    "Error", 
+                    JOptionPane.ERROR_MESSAGE);
             }
         } else if (source == deleteButton) {
             int selectedRow = equipmentTable.getSelectedRow();
             if (selectedRow >= 0) {
                 int equipmentId = (int) equipmentTable.getValueAt(selectedRow, 0);
-                if (showConfirmDialog("Are you sure you want to delete this equipment?")) {
+                int confirm = JOptionPane.showConfirmDialog(this,
+                    "Are you sure you want to delete this equipment?",
+                    "Confirm Deletion",
+                    JOptionPane.YES_NO_OPTION);
+                    
+                if (confirm == JOptionPane.YES_OPTION) {
                     deleteEquipment(equipmentId);
                 }
             } else {
-                showErrorMessage("Please select an equipment item to delete.");
+                JOptionPane.showMessageDialog(this, 
+                    "Please select an equipment item to delete.", 
+                    "Error", 
+                    JOptionPane.ERROR_MESSAGE);
             }
         } else if (source == maintenanceButton) {
             int selectedRow = equipmentTable.getSelectedRow();
@@ -194,20 +229,25 @@ public class EquipmentManagementGUI extends BaseGUI implements ActionListener {
                     showMaintenanceDialog(selectedEquipment);
                 }
             } else {
-                showErrorMessage("Please select an equipment item for maintenance.");
+                JOptionPane.showMessageDialog(this, 
+                    "Please select an equipment item for maintenance.", 
+                    "Error", 
+                    JOptionPane.ERROR_MESSAGE);
             }
         } else if (source == backButton) {
-            // Go back to staff dashboard (to be implemented)
+            // Go back to previous screen
             this.dispose();
+            new WelcomeGUI();
         }
     }
     
     /**
      * Find equipment by ID
-     *  equipmentId The equipment ID to find
+     * @param equipmentId The equipment ID to find
      * @return The equipment object or null if not found
      */
     private Equipment getEquipmentById(int equipmentId) {
+        ArrayList<Equipment> equipmentList = dataManager.getEquipment();
         for (Equipment equipment : equipmentList) {
             if (equipment.getEquipmentId() == equipmentId) {
                 return equipment;
@@ -217,39 +257,36 @@ public class EquipmentManagementGUI extends BaseGUI implements ActionListener {
     }
     
     /**
-     * Delete equipment with confirmation
-     *  equipmentId The equipment ID to delete
+     * Delete equipment
+     * @param equipmentId The equipment ID to delete
      */
     private void deleteEquipment(int equipmentId) {
-        // Find the equipment to delete
-        Equipment toDelete = null;
-        int index = -1;
+        boolean success = dataManager.deleteEquipment(equipmentId);
         
-        for (int i = 0; i < equipmentList.size(); i++) {
-            if (equipmentList.get(i).getEquipmentId() == equipmentId) {
-                toDelete = equipmentList.get(i);
-                index = i;
-                break;
+        if (success) {
+            // Find the row with this equipment ID
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                if ((int)tableModel.getValueAt(i, 0) == equipmentId) {
+                    tableModel.removeRow(i);
+                    break;
+                }
             }
-        }
-        
-        if (toDelete != null && index >= 0) {
-            // Remove from list
-            equipmentList.remove(index);
             
-            // Update table
-            tableModel.removeRow(equipmentTable.convertRowIndexToModel(equipmentTable.getSelectedRow()));
-            
-            // Save changes (to be implemented with serialization)
-            // Equipment.saveEquipment(equipmentList);
-            
-            showInfoMessage("Equipment deleted successfully.");
+            JOptionPane.showMessageDialog(this, 
+                "Equipment deleted successfully.", 
+                "Success", 
+                JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this, 
+                "Failed to delete equipment.", 
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
         }
     }
     
     /**
      * Show dialog for adding or editing equipment
-     *  equipment Equipment to edit, or null for new equipment
+     * @param equipment Equipment to edit, or null for new equipment
      */
     private void showEquipmentDialog(Equipment equipment) {
         final boolean isNewEquipment = (equipment == null);
@@ -356,15 +393,18 @@ public class EquipmentManagementGUI extends BaseGUI implements ActionListener {
         gbc.insets = new Insets(20, 5, 5, 5);
         
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
-        JButton saveButton = createStyledButton("Save", SECONDARY_COLOR, null);
-        JButton cancelButton = createStyledButton("Cancel", NEUTRAL_COLOR, null);
+        JButton saveButton = createStyledButton("Save", SECONDARY_COLOR);
+        JButton cancelButton = createStyledButton("Cancel", NEUTRAL_COLOR);
         
         saveButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Validate fields
                 if (nameField.getText().trim().isEmpty()) {
-                    showErrorMessage("Name cannot be empty.");
+                    JOptionPane.showMessageDialog(dialog, 
+                        "Name cannot be empty.", 
+                        "Error", 
+                        JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 
@@ -372,18 +412,24 @@ public class EquipmentManagementGUI extends BaseGUI implements ActionListener {
                 try {
                     price = Double.parseDouble(priceField.getText().trim());
                     if (price < 0) {
-                        showErrorMessage("Price must be a positive number.");
+                        JOptionPane.showMessageDialog(dialog, 
+                            "Price must be a positive number.", 
+                            "Error", 
+                            JOptionPane.ERROR_MESSAGE);
                         return;
                     }
                 } catch (NumberFormatException ex) {
-                    showErrorMessage("Price must be a valid number.");
+                    JOptionPane.showMessageDialog(dialog, 
+                        "Price must be a valid number.", 
+                        "Error", 
+                        JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 
                 // Save or update equipment
                 if (isNewEquipment) {
-                    // Create new equipment
-                    int newId = getNextEquipmentId();
+                    // Create new equipment with next available ID
+                    int newId = dataManager.getNextId("equipment");
                     Equipment newEquipment = new Equipment(
                         newId,
                         nameField.getText().trim(),
@@ -393,9 +439,10 @@ public class EquipmentManagementGUI extends BaseGUI implements ActionListener {
                         (String) conditionBox.getSelectedItem()
                     );
                     
-                    // Add to list and table
-                    equipmentList.add(newEquipment);
+                    // Save to data manager
+                    dataManager.saveEquipment(newEquipment);
                     
+                    // Add to table
                     Object[] rowData = {
                         newId,
                         newEquipment.getName(),
@@ -418,23 +465,28 @@ public class EquipmentManagementGUI extends BaseGUI implements ActionListener {
                         existingEquipment.setAvailabilityStatus((String) availabilityBox.getSelectedItem());
                         existingEquipment.setConditionStatus((String) conditionBox.getSelectedItem());
                         
+                        // Save to data manager
+                        dataManager.saveEquipment(existingEquipment);
+                        
                         // Update table
-                        int row = equipmentTable.getSelectedRow();
-                        if (row >= 0) {
-                            equipmentTable.setValueAt(existingEquipment.getName(), row, 1);
-                            equipmentTable.setValueAt(existingEquipment.getDescription(), row, 2);
-                            equipmentTable.setValueAt(String.format("$%.2f", existingEquipment.getRentalPrice()), row, 3);
-                            equipmentTable.setValueAt(existingEquipment.getAvailabilityStatus(), row, 4);
-                            equipmentTable.setValueAt(existingEquipment.getConditionStatus(), row, 5);
+                        for (int i = 0; i < tableModel.getRowCount(); i++) {
+                            if ((int)tableModel.getValueAt(i, 0) == id) {
+                                tableModel.setValueAt(existingEquipment.getName(), i, 1);
+                                tableModel.setValueAt(existingEquipment.getDescription(), i, 2);
+                                tableModel.setValueAt(String.format("$%.2f", existingEquipment.getRentalPrice()), i, 3);
+                                tableModel.setValueAt(existingEquipment.getAvailabilityStatus(), i, 4);
+                                tableModel.setValueAt(existingEquipment.getConditionStatus(), i, 5);
+                                break;
+                            }
                         }
                     }
                 }
                 
-                // Save changes (to be implemented with serialization)
-                // Equipment.saveEquipment(equipmentList);
-                
                 dialog.dispose();
-                showInfoMessage(isNewEquipment ? "Equipment added successfully." : "Equipment updated successfully.");
+                JOptionPane.showMessageDialog(EquipmentManagementGUI.this, 
+                    isNewEquipment ? "Equipment added successfully." : "Equipment updated successfully.",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
             }
         });
         
@@ -458,7 +510,7 @@ public class EquipmentManagementGUI extends BaseGUI implements ActionListener {
     
     /**
      * Show maintenance dialog for equipment
-     *  equipment The equipment to maintain
+     * @param equipment The equipment to maintain
      */
     private void showMaintenanceDialog(Equipment equipment) {
         final JDialog dialog = new JDialog(this, "Schedule Maintenance", true);
@@ -543,8 +595,8 @@ public class EquipmentManagementGUI extends BaseGUI implements ActionListener {
         gbc.insets = new Insets(20, 5, 5, 5);
         
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
-        JButton saveButton = createStyledButton("Schedule", SECONDARY_COLOR, null);
-        JButton cancelButton = createStyledButton("Cancel", NEUTRAL_COLOR, null);
+        JButton saveButton = createStyledButton("Schedule", SECONDARY_COLOR);
+        JButton cancelButton = createStyledButton("Cancel", NEUTRAL_COLOR);
         
         saveButton.addActionListener(new ActionListener() {
             @Override
@@ -552,20 +604,24 @@ public class EquipmentManagementGUI extends BaseGUI implements ActionListener {
                 // Update equipment status
                 equipment.setAvailabilityStatus((String) newStatusBox.getSelectedItem());
                 
+                // Save to data manager
+                dataManager.saveEquipment(equipment);
+                
                 // Update table
-                int row = equipmentTable.getSelectedRow();
-                if (row >= 0) {
-                    equipmentTable.setValueAt(equipment.getAvailabilityStatus(), row, 4);
+                for (int i = 0; i < tableModel.getRowCount(); i++) {
+                    if ((int)tableModel.getValueAt(i, 0) == equipment.getEquipmentId()) {
+                        tableModel.setValueAt(equipment.getAvailabilityStatus(), i, 4);
+                        break;
+                    }
                 }
                 
-                // Save maintenance record (to be implemented)
-                // Create and save a Maintenance object
-                
-                // Save equipment changes (to be implemented)
-                // Equipment.saveEquipment(equipmentList);
+                // In a full implementation, we would create a Maintenance record here
                 
                 dialog.dispose();
-                showInfoMessage("Maintenance scheduled successfully.");
+                JOptionPane.showMessageDialog(EquipmentManagementGUI.this, 
+                    "Maintenance scheduled successfully.", 
+                    "Success", 
+                    JOptionPane.INFORMATION_MESSAGE);
             }
         });
         
@@ -585,20 +641,6 @@ public class EquipmentManagementGUI extends BaseGUI implements ActionListener {
         dialog.setLocationRelativeTo(this);
         dialog.setResizable(false);
         dialog.setVisible(true);
-    }
-    
-    /**
-     * Get next available equipment ID
-     * @return The next available ID
-     */
-    private int getNextEquipmentId() {
-        int maxId = 0;
-        for (Equipment equipment : equipmentList) {
-            if (equipment.getEquipmentId() > maxId) {
-                maxId = equipment.getEquipmentId();
-            }
-        }
-        return maxId + 1;
     }
     
     /**

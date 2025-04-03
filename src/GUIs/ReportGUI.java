@@ -24,13 +24,15 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 
+import serialization.Customer;
+import serialization.DataManager;
 import serialization.Date;
 import serialization.Event;
 import serialization.Invoice;
 import serialization.RentalOrder;
 
 /**
- * Simple GUI for generating reports
+ * GUI for generating reports, updated to use DataManager
  */
 public class ReportGUI extends JFrame implements ActionListener {
     // Components
@@ -43,10 +45,8 @@ public class ReportGUI extends JFrame implements ActionListener {
     private JButton exportButton;
     private JButton backButton;
     
-    // Data
-    private ArrayList<Event> eventsList;
-    private ArrayList<RentalOrder> rentalsList;
-    private ArrayList<Invoice> invoicesList;
+    // Data manager
+    private DataManager dataManager;
     
     // Colors
     private final Color PRIMARY_COLOR = new Color(0, 112, 116);
@@ -62,34 +62,14 @@ public class ReportGUI extends JFrame implements ActionListener {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLocationRelativeTo(null);
         
-        // Load sample data
-        loadSampleData();
+        // Get data manager instance
+        dataManager = DataManager.getInstance();
         
         initComponents();
         setupLayout();
         setupEventHandlers();
         
         this.setVisible(true);
-    }
-    
-    /**
-     * Load sample data
-     */
-    private void loadSampleData() {
-        // Events
-        eventsList = new ArrayList<>();
-        eventsList.add(new Event(1, 1, "Birthday Party", "Skating Ranger", new Date(10, 3, 2025)));
-        eventsList.add(new Event(2, 2, "Wedding Reception", "Pauls Chapel", new Date(20, 4, 2025)));
-        
-        // Rentals
-        rentalsList = new ArrayList<>();
-        rentalsList.add(new RentalOrder(1, 1, 1, new Date(8, 3, 2025), new Date(11, 3, 2025), "Confirmed", 200.0));
-        rentalsList.add(new RentalOrder(2, 2, 2, new Date(18, 4, 2025), new Date(21, 4, 2025), "Pending", 500.0));
-        
-        // Invoices
-        invoicesList = new ArrayList<>();
-        invoicesList.add(new Invoice(1, 1, 1, 200.0, new Date(7, 3, 2025), "Credit Card"));
-        invoicesList.add(new Invoice(2, 2, 2, 500.0, null, null));
     }
     
     /**
@@ -251,6 +231,9 @@ public class ReportGUI extends JFrame implements ActionListener {
      * Generate events report
      */
     private void generateEventsReport() {
+        // Get events from data manager
+        ArrayList<Event> eventsList = dataManager.getEvents();
+        
         // Clear existing data
         tableModel = new DefaultTableModel(
             new String[]{"Event ID", "Name", "Date", "Location", "Customer ID"}, 
@@ -277,6 +260,9 @@ public class ReportGUI extends JFrame implements ActionListener {
      * Generate rentals report
      */
     private void generateRentalsReport() {
+        // Get rentals from data manager
+        ArrayList<RentalOrder> rentalsList = dataManager.getRentals();
+        
         // Clear existing data
         tableModel = new DefaultTableModel(
             new String[]{"Rental ID", "Event ID", "Customer ID", "Rental Date", "Return Date", "Status", "Total Price"}, 
@@ -304,6 +290,9 @@ public class ReportGUI extends JFrame implements ActionListener {
      * Generate revenue report
      */
     private void generateRevenueReport() {
+        // Get invoices from data manager
+        ArrayList<Invoice> invoicesList = dataManager.getInvoices();
+        
         // Clear existing data
         tableModel = new DefaultTableModel(
             new String[]{"Invoice ID", "Rental ID", "Customer ID", "Amount", "Payment Date", "Status"}, 

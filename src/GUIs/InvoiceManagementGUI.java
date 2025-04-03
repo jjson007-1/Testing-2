@@ -32,12 +32,14 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 
 import serialization.Customer;
+import serialization.DataManager;
 import serialization.Date;
+import serialization.Event;
 import serialization.Invoice;
 import serialization.RentalOrder;
 
 /**
- * Simple GUI for managing invoices
+ * GUI for managing invoices, updated to use DataManager
  */
 public class InvoiceManagementGUI extends JFrame implements ActionListener {
     // Components
@@ -50,10 +52,8 @@ public class InvoiceManagementGUI extends JFrame implements ActionListener {
     private JButton printInvoiceButton;
     private JButton backButton;
     
-    // Data
-    private ArrayList<Invoice> invoicesList;
-    private ArrayList<RentalOrder> rentalsList;
-    private ArrayList<Customer> customersList;
+    // Data manager
+    private DataManager dataManager;
     
     // Colors
     private final Color PRIMARY_COLOR = new Color(0, 112, 116);
@@ -69,8 +69,8 @@ public class InvoiceManagementGUI extends JFrame implements ActionListener {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLocationRelativeTo(null);
         
-        // Load data
-        loadData();
+        // Get data manager instance
+        dataManager = DataManager.getInstance();
         
         initComponents();
         setupLayout();
@@ -80,63 +80,14 @@ public class InvoiceManagementGUI extends JFrame implements ActionListener {
     }
     
     /**
-     * Load all necessary data
-     */
-    private void loadData() {
-        loadInvoicesData();
-        loadRentalsData();
-        loadCustomersData();
-    }
-    
-    /**
-     * Load invoices data
-     */
-    private void loadInvoicesData() {
-        // Sample data
-        invoicesList = new ArrayList<>();
-        
-        Date paymentDate1 = new Date(7, 3, 2025);
-        invoicesList.add(new Invoice(1, 1, 1, 200.0, paymentDate1, "Credit Card"));
-        invoicesList.add(new Invoice(2, 2, 2, 500.0, null, null));
-    }
-    
-    /**
-     * Load rental orders data
-     */
-    private void loadRentalsData() {
-        // Sample data
-        rentalsList = new ArrayList<>();
-        
-        Date rentalDate1 = new Date(8, 3, 2025);
-        Date returnDate1 = new Date(11, 3, 2025);
-        Date rentalDate2 = new Date(18, 4, 2025);
-        Date returnDate2 = new Date(21, 4, 2025);
-        
-        rentalsList.add(new RentalOrder(1, 1, 1, rentalDate1, returnDate1, "Confirmed", 200.0));
-        rentalsList.add(new RentalOrder(2, 2, 2, rentalDate2, returnDate2, "Pending", 500.0));
-    }
-    
-    /**
-     * Load customers data
-     */
-    private void loadCustomersData() {
-        // Sample data
-        customersList = new ArrayList<>();
-        
-        customersList.add(new Customer("John Doe", "123-456-7890", "johndoe@example.com"));
-        customersList.add(new Customer("Jane Smith", "234-567-8901", "janesmith@example.com"));
-        
-        // Set IDs manually for the sample data
-        customersList.get(0).setId(1);
-        customersList.get(1).setId(2);
-    }
-    
-    /**
      * Initialize all UI components
      */
     private void initComponents() {
         mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        
+        // Get invoices from data manager
+        ArrayList<Invoice> invoicesList = dataManager.getInvoices();
         
         // Create the invoices table model
         Object[][] invoicesData = new Object[invoicesList.size()][6];
@@ -282,11 +233,23 @@ public class InvoiceManagementGUI extends JFrame implements ActionListener {
             return;
         }
         
+        // Get related rental and customer from data manager
+        RentalOrder rental = getRentalById(invoice.getRentalId());
+        Customer customer = getCustomerById(invoice.getCustomerId());
+        
         StringBuilder receipt = new StringBuilder();
         receipt.append("=============== INVOICE RECEIPT ===============\n\n");
         receipt.append("Invoice ID: ").append(invoice.getInvoiceId()).append("\n");
         receipt.append("Rental ID: ").append(invoice.getRentalId()).append("\n");
-        receipt.append("Customer: ").append(getCustomerNameById(invoice.getCustomerId())).append("\n\n");
+        receipt.append("Customer: ").append(customer != null ? 
+            customer.getFullName() + " " : "Unknown Customer").append("\n\n");
+        
+        if (rental != null) {
+            receipt.append("Event: ").append(getEventNameById(rental.getEventId())).append("\n");
+            receipt.append("Rental Period: ").append(formatDate(rental.getRentalDate()))
+                   .append(" to ").append(formatDate(rental.getReturnDate())).append("\n");
+            receipt.append("Status: ").append(rental.getRentStatus()).append("\n\n");
+        }
         
         receipt.append("Amount Due: $").append(String.format("%.2f", invoice.getAmountDue())).append("\n");
         receipt.append("Payment Status: ").append(invoice.isPaid() ? "PAID" : "UNPAID").append("\n");
@@ -322,7 +285,8 @@ public class InvoiceManagementGUI extends JFrame implements ActionListener {
      * Find invoice by ID
      */
     private Invoice getInvoiceById(int invoiceId) {
-        for (Invoice invoice : invoicesList) {
+        ArrayList<Invoice> invoices = dataManager.getInvoices();
+        for (Invoice invoice : invoices) {
             if (invoice.getInvoiceId() == invoiceId) {
                 return invoice;
             }
@@ -331,13 +295,51 @@ public class InvoiceManagementGUI extends JFrame implements ActionListener {
     }
     
     /**
+     * Find rental by ID
+     */
+    private RentalOrder getRentalById(int rentalId) {
+        ArrayList<RentalOrder> rentals = dataManager.getRentals();
+        for (RentalOrder rental : rentals) {
+            if (rental.getRentalId() == rentalId) {
+                return rental;
+            }
+        }
+        return null;
+    }
+    
+    /**
      * Find customer by ID
      */
-    private String getCustomerNameById(int customerId) {
-        for (Customer customer : customersList) {
+    private Customer getCustomerById(int customerId) {
+        ArrayList<Customer> customers = dataManager.getCustomers();
+        for (Customer customer : customers) {
             if (customer.getId() == customerId) {
-                return customer.getFirstName() + " " + customer.getLastName();
+                return customer;
             }
+        }
+        return null;
+    }
+    
+    /**
+     * Find event name by ID
+     */
+    private String getEventNameById(int eventId) {
+        ArrayList<Event> events = dataManager.getEvents();
+        for (Event event : events) {
+            if (event.getEventId() == eventId) {
+                return event.getEventName();
+            }
+        }
+        return "Unknown Event";
+    }
+    
+    /**
+     * Find customer name by ID
+     */
+    private String getCustomerNameById(int customerId) {
+        Customer customer = getCustomerById(customerId);
+        if (customer != null) {
+            return customer.getFullName();
         }
         return "Unknown Customer";
     }
@@ -370,6 +372,7 @@ public class InvoiceManagementGUI extends JFrame implements ActionListener {
         } else if (source == printInvoiceButton) {
             int selectedRow = invoicesTable.getSelectedRow();
             if (selectedRow >= 0) {
+                // In a real app, this would generate a PDF
                 JOptionPane.showMessageDialog(this, 
                     "Printing functionality will be implemented.", 
                     "Information", 
@@ -406,6 +409,9 @@ public class InvoiceManagementGUI extends JFrame implements ActionListener {
         panel.add(new JLabel("Rental:"), gbc);
         gbc.gridx = 1;
         gbc.anchor = GridBagConstraints.WEST;
+        
+        // Get rentals from data manager
+        ArrayList<RentalOrder> rentalsList = dataManager.getRentals();
         
         // Create array of rental options
         String[] rentalOptions = new String[rentalsList.size()];
@@ -477,13 +483,7 @@ public class InvoiceManagementGUI extends JFrame implements ActionListener {
                 int rentalId = Integer.parseInt(selectedRental.split(" - ")[0]);
                 
                 // Find rental
-                RentalOrder rental = null;
-                for (RentalOrder r : rentalsList) {
-                    if (r.getRentalId() == rentalId) {
-                        rental = r;
-                        break;
-                    }
-                }
+                RentalOrder rental = getRentalById(rentalId);
                 
                 if (rental == null) {
                     JOptionPane.showMessageDialog(dialog, 
@@ -493,8 +493,8 @@ public class InvoiceManagementGUI extends JFrame implements ActionListener {
                     return;
                 }
                 
-                // Create invoice
-                int newId = getNextInvoiceId();
+                // Create invoice with next available ID
+                int newId = dataManager.getNextId("invoice");
                 Invoice newInvoice = new Invoice(
                     newId,
                     rentalId,
@@ -504,9 +504,10 @@ public class InvoiceManagementGUI extends JFrame implements ActionListener {
                     null   // No payment method yet
                 );
                 
-                // Add to list and table
-                invoicesList.add(newInvoice);
+                // Save to data manager
+                dataManager.saveInvoice(newInvoice);
                 
+                // Add to table
                 Object[] rowData = {
                     newId,
                     "Rental #" + rentalId,
@@ -579,19 +580,28 @@ public class InvoiceManagementGUI extends JFrame implements ActionListener {
         gbc.gridx = 0;
         gbc.gridy++;
         gbc.anchor = GridBagConstraints.EAST;
-        panel.add(new JLabel("Payment Date:"), gbc);
+        panel.add(new JLabel("Payment Date (DD/MM/YYYY):"), gbc);
         gbc.gridx = 1;
         gbc.anchor = GridBagConstraints.WEST;
         
-        // Use current date as default
-        Date currentDate = new Date();
-        // In a real app, get the current system date
-        currentDate.setDay(1);
-        currentDate.setMonth(4);
-        currentDate.setYear(2025);
+        // Panel for payment date fields
+        JPanel datePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        JTextField dayField = new JTextField(2);
+        JTextField monthField = new JTextField(2);
+        JTextField yearField = new JTextField(4);
         
-        JLabel dateLabel = new JLabel(formatDate(currentDate));
-        panel.add(dateLabel, gbc);
+        // Use current date as default
+        dayField.setText("1");
+        monthField.setText("4");
+        yearField.setText("2025");
+        
+        datePanel.add(dayField);
+        datePanel.add(new JLabel("/"));
+        datePanel.add(monthField);
+        datePanel.add(new JLabel("/"));
+        datePanel.add(yearField);
+        
+        panel.add(datePanel, gbc);
         
         // Payment method
         gbc.gridx = 0;
@@ -619,15 +629,41 @@ public class InvoiceManagementGUI extends JFrame implements ActionListener {
         confirmButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // Mark invoice as paid
-                invoice.setPaymentDate(currentDate);
+                // Validate date
+                int day, month, year;
+                try {
+                    day = Integer.parseInt(dayField.getText().trim());
+                    month = Integer.parseInt(monthField.getText().trim());
+                    year = Integer.parseInt(yearField.getText().trim());
+                    
+                    if (day < 1 || day > 31 || month < 1 || month > 12 || year < 2000) {
+                        throw new NumberFormatException("Invalid date values");
+                    }
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(dialog, 
+                        "Please enter a valid date.", 
+                        "Error", 
+                        JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                // Create payment date
+                Date paymentDate = new Date(day, month, year);
+                
+                // Update invoice
+                invoice.setPaymentDate(paymentDate);
                 invoice.setPaymentMethod((String) methodBox.getSelectedItem());
                 
+                // Save to data manager
+                dataManager.saveInvoice(invoice);
+                
                 // Update table
-                int selectedRow = invoicesTable.getSelectedRow();
-                if (selectedRow >= 0) {
-                    tableModel.setValueAt(formatDate(currentDate), selectedRow, 4);
-                    tableModel.setValueAt("Paid", selectedRow, 5);
+                for (int i = 0; i < tableModel.getRowCount(); i++) {
+                    if ((int)tableModel.getValueAt(i, 0) == invoice.getInvoiceId()) {
+                        tableModel.setValueAt(formatDate(paymentDate), i, 4);
+                        tableModel.setValueAt("Paid", i, 5);
+                        break;
+                    }
                 }
                 
                 // Update display
@@ -657,19 +693,6 @@ public class InvoiceManagementGUI extends JFrame implements ActionListener {
         dialog.setLocationRelativeTo(this);
         dialog.setResizable(false);
         dialog.setVisible(true);
-    }
-    
-    /**
-     * Get next available invoice ID
-     */
-    private int getNextInvoiceId() {
-        int maxId = 0;
-        for (Invoice invoice : invoicesList) {
-            if (invoice.getInvoiceId() > maxId) {
-                maxId = invoice.getInvoiceId();
-            }
-        }
-        return maxId + 1;
     }
     
     /**

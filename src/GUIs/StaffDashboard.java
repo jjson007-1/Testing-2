@@ -89,9 +89,9 @@ public class StaffDashboard extends BaseGUI implements ActionListener {
         // This should load staff data from storage
         // For now, create a placeholder staff
         currentStaff = new Staff();
-        currentStaff.setStaff_id(staffId);
+        currentStaff.setStaffId(staffId);
         currentStaff.setFullName("Jane Doe");
-        currentStaff.setRole("Manager");
+        currentStaff.setStaffRole("Manager");
     }
     
     @Override
@@ -161,7 +161,6 @@ public class StaffDashboard extends BaseGUI implements ActionListener {
     
     /**
      * Creates the header panel with date/time and user info
-     * @return The header panel
      */
     private JPanel createHeaderPanel() {
         JPanel headerPanel = new JPanel(new BorderLayout());
@@ -179,7 +178,7 @@ public class StaffDashboard extends BaseGUI implements ActionListener {
         
         staffNameLabel = new JLabel(currentStaff.getFullName());
         staffNameLabel.setFont(NORMAL_FONT);
-        staffRoleLabel = new JLabel(currentStaff.getRole());
+        staffRoleLabel = new JLabel(currentStaff.getStaffRole());
         staffRoleLabel.setFont(SMALL_FONT);
         
         staffInfoPanel.add(staffNameLabel);
@@ -283,7 +282,7 @@ public class StaffDashboard extends BaseGUI implements ActionListener {
      *  title Panel title
      *  value Main value to display
      *  subtitle Subtitle description
-     * @return Formatted summary panel
+     * Formatted summary panel
      */
     private JPanel createSummaryPanel(String title, String value, String subtitle) {
         JPanel panel = new JPanel();
@@ -316,11 +315,7 @@ public class StaffDashboard extends BaseGUI implements ActionListener {
         return panel;
     }
     
-    /**
-     * Creates a styled button for the sidebar
-     *  text The button text
-     * @return A styled JButton
-     */
+    
     private JButton createSidebarButton(String text) {
         JButton button = new JButton(text);
         button.setForeground(LIGHT_COLOR);

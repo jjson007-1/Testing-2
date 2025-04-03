@@ -14,7 +14,6 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
@@ -33,13 +32,14 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 
 import serialization.Customer;
+import serialization.DataManager;
 import serialization.Date;
 import serialization.Equipment;
 import serialization.Event;
 import serialization.RentalOrder;
 
 /**
- * GUI for managing rental orders
+ * GUI for managing rental orders, updated to use DataManager
  */
 public class RentalManagementGUI extends JFrame implements ActionListener {
     // Components
@@ -54,19 +54,16 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
     private JButton generateInvoiceButton;
     private JButton backButton;
     
-    // Data
-    private ArrayList<RentalOrder> rentalsList;
-    private ArrayList<Equipment> equipmentList;
-    private ArrayList<Event> eventsList;
-    private ArrayList<Customer> customersList;
+    // Data manager
+    private DataManager dataManager;
     
     // Currently selected rental
     private RentalOrder selectedRental;
     
-    // Colors (matching existing GUIs)
-    private final Color PRIMARY_COLOR = new Color(0, 112, 116);    // Teal
-    private final Color SECONDARY_COLOR = new Color(255, 100, 50); // Orange
-    private final Color NEUTRAL_COLOR = new Color(70, 70, 70);     // Dark Gray
+    // Colors
+    private final Color PRIMARY_COLOR = new Color(0, 112, 116);
+    private final Color SECONDARY_COLOR = new Color(255, 100, 50);
+    private final Color NEUTRAL_COLOR = new Color(70, 70, 70);
     
     /**
      * Constructor
@@ -77,8 +74,8 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLocationRelativeTo(null);
         
-        // Load data
-        loadData();
+        // Get data manager instance
+        dataManager = DataManager.getInstance();
         
         initComponents();
         setupLayout();
@@ -88,82 +85,14 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
     }
     
     /**
-     * Load all necessary data
-     */
-    private void loadData() {
-        loadRentalsData();
-        loadEquipmentData();
-        loadEventsData();
-        loadCustomersData();
-    }
-    
-    /**
-     * Load rental orders data
-     */
-    private void loadRentalsData() {
-        // This would normally load from serialized file
-        // For now, create sample data
-        rentalsList = new ArrayList<>();
-        
-        // Create sample rental orders with our Date class
-        Date rentalDate1 = new Date(8, 3, 2025);
-        Date returnDate1 = new Date(11, 3, 2025);
-        Date rentalDate2 = new Date(18, 4, 2025);
-        Date returnDate2 = new Date(21, 4, 2025);
-        
-        rentalsList.add(new RentalOrder(1, 1, 1236, rentalDate1, returnDate1, "Confirmed", 200.0));
-        rentalsList.add(new RentalOrder(2, 2, 2546, rentalDate2, returnDate2, "Pending", 500.0));
-    }
-    
-    /**
-     * Load equipment data
-     */
-    private void loadEquipmentData() {
-        // This would normally load from serialized file
-        // For now, create sample data
-        equipmentList = new ArrayList<>();
-        
-        equipmentList.add(new Equipment(1, "Speakers", "High-quality sound system", 50.0, "Available", "Good"));
-        equipmentList.add(new Equipment(2, "Projector", "4K HD projector", 80.0, "Available", "Good"));
-        equipmentList.add(new Equipment(3, "Tables", "Round tables for seating", 15.0, "Available", "Good"));
-        equipmentList.add(new Equipment(4, "Chairs", "Comfortable seating", 5.0, "Available", "Good"));
-    }
-    
-    /**
-     * Load events data
-     */
-    private void loadEventsData() {
-        // This would normally load from serialized file
-        // For now, create sample data
-        eventsList = new ArrayList<>();
-        
-        eventsList.add(new Event(1, 1, "Birthday Party", "Skating Ranger", new Date(10, 3, 2025)));
-        eventsList.add(new Event(2, 2, "Wedding Reception", "Pauls Chapel", new Date(20, 4, 2025)));
-        eventsList.add(new Event(3, 3, "Corporate Event", "LHN Headquarters", new Date(15, 5, 2025)));
-    }
-    
-    /**
-     * Load customers data
-     */
-    private void loadCustomersData() {
-        // This would normally load from serialized file
-        // For now, create sample data
-        customersList = new ArrayList<>();
-        
-        customersList.add(new Customer("John Doe", "123-456-7890", "johndoe@example.com"));
-        customersList.add(new Customer("Jane Smith", "234-567-8901", "janesmith@example.com"));
-        
-        // Set IDs manually for the sample data
-        customersList.get(0).setId(1);
-        customersList.get(1).setId(2);
-    }
-    
-    /**
      * Initialize all UI components
      */
     private void initComponents() {
         mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        
+        // Get data from data manager
+        ArrayList<RentalOrder> rentalsList = dataManager.getRentals();
         
         // Create the rentals table model
         Object[][] rentalsData = new Object[rentalsList.size()][7];
@@ -174,8 +103,8 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
             rentalsData[i][2] = getCustomerNameById(rental.getCustomerId());
             
             // Format the dates
-            serialization.Date rentalDate = rental.getRentalDate();
-            serialization.Date returnDate = rental.getReturnDate();
+            Date rentalDate = rental.getRentalDate();
+            Date returnDate = rental.getReturnDate();
             
             rentalsData[i][3] = String.format("%02d/%02d/%04d", 
                 rentalDate.getDay(), rentalDate.getMonth(), rentalDate.getYear());
@@ -301,9 +230,6 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
     
     /**
      * Creates a styled button with the given text and color
-     *  text The button text
-     *  color The button background color
-     * @return A styled JButton
      */
     private JButton createStyledButton(String text, Color color) {
         JButton button = new JButton(text);
@@ -319,7 +245,7 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
     
     /**
      * Display equipment for the selected rental
-     *  rental The selected rental order
+     * @param rental The selected rental order
      */
     private void displayRentalEquipment(RentalOrder rental) {
         // Clear the equipment table
@@ -329,12 +255,14 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
         
         // In a real implementation, this would fetch the actual equipment items
         // associated with the rental from a database or serialized file.
-        // For now, we'll show sample data
+        // For now, we'll show sample data from available equipment
+        ArrayList<Equipment> equipmentList = dataManager.getEquipment();
         
-        // Clear the table and add sample data
-        for (int i = 0; i < 3 && i < equipmentList.size(); i++) {
+        // Show first 3 equipment items for demo purposes
+        int limit = Math.min(3, equipmentList.size());
+        for (int i = 0; i < limit; i++) {
             Equipment equip = equipmentList.get(i);
-            int quantity = i + 1;
+            int quantity = i + 1; // Just a sample quantity
             double subtotal = equip.getRentalPrice() * quantity;
             
             Object[] rowData = {
@@ -361,11 +289,12 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
     
     /**
      * Find rental order by ID
-     *  rentalId The rental ID to find
+     * @param rentalId The rental ID to find
      * @return The rental order object or null if not found
      */
     private RentalOrder getRentalById(int rentalId) {
-        for (RentalOrder rental : rentalsList) {
+        ArrayList<RentalOrder> rentals = dataManager.getRentals();
+        for (RentalOrder rental : rentals) {
             if (rental.getRentalId() == rentalId) {
                 return rental;
             }
@@ -375,11 +304,12 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
     
     /**
      * Find event by ID
-     *  eventId The event ID to find
+     * @param eventId The event ID to find
      * @return The event name or "Unknown" if not found
      */
     private String getEventNameById(int eventId) {
-        for (Event event : eventsList) {
+        ArrayList<Event> events = dataManager.getEvents();
+        for (Event event : events) {
             if (event.getEventId() == eventId) {
                 return event.getEventName();
             }
@@ -389,13 +319,14 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
     
     /**
      * Find customer by ID
-     *  customerId The customer ID to find
+     * @param customerId The customer ID to find
      * @return The customer name or "Unknown" if not found
      */
     private String getCustomerNameById(int customerId) {
-        for (Customer customer : customersList) {
+        ArrayList<Customer> customers = dataManager.getCustomers();
+        for (Customer customer : customers) {
             if (customer.getId() == customerId) {
-                return customer.getFirstName() + " " + customer.getLastName();
+                return customer.getFullName();
             }
         }
         return "Unknown Customer";
@@ -443,9 +374,9 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
             int selectedRow = rentalsTable.getSelectedRow();
             if (selectedRow >= 0) {
                 int rentalId = (int) rentalsTable.getValueAt(selectedRow, 0);
-                // TODO: Generate invoice for this rental
+                // Open invoice form or navigate to invoice screen
                 JOptionPane.showMessageDialog(this, 
-                    "Invoice generation for Rental ID " + rentalId + " will be implemented.", 
+                    "Navigate to Invoice screen for Rental ID " + rentalId, 
                     "Information", 
                     JOptionPane.INFORMATION_MESSAGE);
             } else {
@@ -457,51 +388,44 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
         } else if (source == backButton) {
             // Go back to previous screen
             this.dispose();
-            // For demo purposes, show welcome screen
             new WelcomeGUI();
         }
     }
     
     /**
      * Delete rental with confirmation
-     *  rentalId The rental ID to delete
+     * @param rentalId The rental ID to delete
      */
     private void deleteRental(int rentalId) {
-        // Find the rental to delete
-        RentalOrder toDelete = null;
-        int index = -1;
+        boolean success = dataManager.deleteRental(rentalId);
         
-        for (int i = 0; i < rentalsList.size(); i++) {
-            if (rentalsList.get(i).getRentalId() == rentalId) {
-                toDelete = rentalsList.get(i);
-                index = i;
-                break;
+        if (success) {
+            // Find the row with this rental ID
+            for (int i = 0; i < rentalsTableModel.getRowCount(); i++) {
+                if ((int)rentalsTableModel.getValueAt(i, 0) == rentalId) {
+                    rentalsTableModel.removeRow(i);
+                    break;
+                }
             }
-        }
-        
-        if (toDelete != null && index >= 0) {
-            // Remove from list
-            rentalsList.remove(index);
             
-            // Update table
-            int modelRow = rentalsTable.convertRowIndexToModel(rentalsTable.getSelectedRow());
-            rentalsTableModel.removeRow(modelRow);
-            
-            // Clear equipment table
+            // Clear equipment table if this was the selected rental
             clearEquipmentTable();
-            
-            // Save changes (to be implemented)
             
             JOptionPane.showMessageDialog(this, 
                 "Rental deleted successfully.", 
                 "Success", 
                 JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this, 
+                "Failed to delete rental.", 
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
         }
     }
     
     /**
      * Show dialog for adding or editing rental
-     *  rental Rental to edit, or null for new rental
+     * @param rental Rental to edit, or null for new rental
      */
     private void showRentalDialog(RentalOrder rental) {
         final boolean isNewRental = (rental == null);
@@ -535,6 +459,9 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
         gbc.gridx = 1;
         gbc.anchor = GridBagConstraints.WEST;
         
+        // Get events from data manager
+        ArrayList<Event> eventsList = dataManager.getEvents();
+        
         // Create array of event names for the dropdown
         String[] eventNames = new String[eventsList.size()];
         for (int i = 0; i < eventsList.size(); i++) {
@@ -564,11 +491,14 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
         gbc.gridx = 1;
         gbc.anchor = GridBagConstraints.WEST;
         
+        // Get customers from data manager
+        ArrayList<Customer> customersList = dataManager.getCustomers();
+        
         // Create array of customer names for the dropdown
         String[] customerNames = new String[customersList.size()];
         for (int i = 0; i < customersList.size(); i++) {
             Customer customer = customersList.get(i);
-            customerNames[i] = customer.getId() + " - " + customer.getFirstName() + " " + customer.getLastName();
+            customerNames[i] = customer.getId() + " - " + customer.getFullName();
         }
         
         JComboBox<String> customerBox = new JComboBox<>(customerNames);
@@ -774,8 +704,8 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
                 
                 // Save or update rental
                 if (isNewRental) {
-                    // Create new rental
-                    int newId = getNextRentalId();
+                    // Create new rental with next available ID
+                    int newId = dataManager.getNextId("rental");
                     RentalOrder newRental = new RentalOrder(
                         newId,
                         eventId,
@@ -786,9 +716,10 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
                         price
                     );
                     
-                    // Add to list and table
-                    rentalsList.add(newRental);
+                    // Save to data manager
+                    dataManager.saveRental(newRental);
                     
+                    // Add to table
                     Object[] rowData = {
                         newId,
                         getEventNameById(eventId),
@@ -813,25 +744,29 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
                         existingRental.setRentStatus(status);
                         existingRental.setTotalPrice(price);
                         
+                        // Save to data manager
+                        dataManager.saveRental(existingRental);
+                        
                         // Update table
-                        int modelRow = rentalsTable.convertRowIndexToModel(rentalsTable.getSelectedRow());
-                        rentalsTableModel.setValueAt(getEventNameById(eventId), modelRow, 1);
-                        rentalsTableModel.setValueAt(getCustomerNameById(customerId), modelRow, 2);
-                        rentalsTableModel.setValueAt(
-                            String.format("%02d/%02d/%04d", rentalDay, rentalMonth, rentalYear), 
-                            modelRow, 3
-                        );
-                        rentalsTableModel.setValueAt(
-                            String.format("%02d/%02d/%04d", returnDay, returnMonth, returnYear), 
-                            modelRow, 4
-                        );
-                        rentalsTableModel.setValueAt(status, modelRow, 5);
-                        rentalsTableModel.setValueAt(String.format("$%.2f", price), modelRow, 6);
+                        for (int i = 0; i < rentalsTableModel.getRowCount(); i++) {
+                            if ((int)rentalsTableModel.getValueAt(i, 0) == id) {
+                                rentalsTableModel.setValueAt(getEventNameById(eventId), i, 1);
+                                rentalsTableModel.setValueAt(getCustomerNameById(customerId), i, 2);
+                                rentalsTableModel.setValueAt(
+                                    String.format("%02d/%02d/%04d", rentalDay, rentalMonth, rentalYear), 
+                                    i, 3
+                                );
+                                rentalsTableModel.setValueAt(
+                                    String.format("%02d/%02d/%04d", returnDay, returnMonth, returnYear), 
+                                    i, 4
+                                );
+                                rentalsTableModel.setValueAt(status, i, 5);
+                                rentalsTableModel.setValueAt(String.format("$%.2f", price), i, 6);
+                                break;
+                            }
+                        }
                     }
                 }
-                
-                // Save changes (to be implemented with serialization)
-                // RentalOrder.saveRentalOrders(rentalsList);
                 
                 dialog.dispose();
                 JOptionPane.showMessageDialog(RentalManagementGUI.this, 
@@ -857,20 +792,6 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
         dialog.setLocationRelativeTo(this);
         dialog.setResizable(false);
         dialog.setVisible(true);
-    }
-    
-    /**
-     * Get next available rental ID
-     * @return The next available ID
-     */
-    private int getNextRentalId() {
-        int maxId = 0;
-        for (RentalOrder rental : rentalsList) {
-            if (rental.getRentalId() > maxId) {
-                maxId = rental.getRentalId();
-            }
-        }
-        return maxId + 1;
     }
     
     /**

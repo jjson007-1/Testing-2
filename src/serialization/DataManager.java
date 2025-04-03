@@ -88,7 +88,7 @@ public class DataManager {
     /**
      * Ensure data directory exists
      */
-    private void ensureDirectoryExists() {
+    private static void ensureDirectoryExists() {
         File directory = new File(DATA_DIRECTORY);
         if (!directory.exists()) {
             directory.mkdirs();
@@ -492,7 +492,7 @@ public class DataManager {
      * Save users to file
      * @param usersList List of users to save
      */
-    private void saveUsers(ArrayList<User> usersList) {
+    public void saveUsers(ArrayList<User> usersList) {
         ensureDirectoryExists();
         try (FileOutputStream fileOut = new FileOutputStream(USERS_FILE);
              ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
@@ -544,7 +544,7 @@ public class DataManager {
      * Save customers to file
      * @param customersList List of customers to save
      */
-    private void saveCustomers(ArrayList<Customer> customersList) {
+    public static void saveCustomers(ArrayList<Customer> customersList) {
         ensureDirectoryExists();
         try (FileOutputStream fileOut = new FileOutputStream(CUSTOMERS_FILE);
              ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
