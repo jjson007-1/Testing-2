@@ -12,6 +12,7 @@ import java.util.ArrayList;
 /**
  * Centralized manager for all data operations.
  * Provides methods to load and save all types of data.
+ * Updated to handle User-Staff-Customer inheritance properly.
  */
 public class DataManager {
     // File paths
@@ -21,6 +22,7 @@ public class DataManager {
     private static final String RENTALS_FILE = DATA_DIRECTORY + "RentalsDB.ser";
     private static final String INVOICES_FILE = DATA_DIRECTORY + "InvoicesDB.ser";
     private static final String USERS_FILE = DATA_DIRECTORY + "UsersDB.ser";
+    private static final String STAFF_FILE = DATA_DIRECTORY + "StaffDB.ser";  // New file for Staff
     private static final String CUSTOMERS_FILE = DATA_DIRECTORY + "CustomersDB.ser";
     
     // Singleton instance
@@ -32,6 +34,7 @@ public class DataManager {
     private ArrayList<RentalOrder> rentals;
     private ArrayList<Invoice> invoices;
     private ArrayList<User> users;
+    private ArrayList<Staff> staff;  // New collection for Staff
     private ArrayList<Customer> customers;
     
     /**
@@ -44,6 +47,7 @@ public class DataManager {
         rentals = new ArrayList<>();
         invoices = new ArrayList<>();
         users = new ArrayList<>();
+        staff = new ArrayList<>();  // Initialize staff list
         customers = new ArrayList<>();
         
         // Load all data on startup
@@ -70,6 +74,7 @@ public class DataManager {
         rentals = loadRentals();
         invoices = loadInvoices();
         users = loadUsers();
+        staff = loadStaff();  // Load staff data
         customers = loadCustomers();
     }
     
@@ -82,6 +87,7 @@ public class DataManager {
         saveRentals(rentals);
         saveInvoices(invoices);
         saveUsers(users);
+        saveStaff(staff);  // Save staff data
         saveCustomers(customers);
     }
     
@@ -464,6 +470,34 @@ public class DataManager {
     }
     
     /**
+     * Add or update a user
+     * @param user The user to add or update
+     */
+    public void saveUser(User user) {
+        boolean found = false;
+        for (int i = 0; i < users.size(); i++) {
+            if (users.get(i).getUserName().equals(user.getUserName())) {
+                users.set(i, user);
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            users.add(user);
+        }
+        
+        saveUsers(users);
+        
+        // If the user is a Staff or Customer, also save to the appropriate collection
+        if (user instanceof Staff) {
+            saveStaffMember((Staff) user);
+        } else if (user instanceof Customer) {
+            saveCustomer((Customer) user);
+        }
+    }
+    
+    /**
      * Load users from file
      * @return List of users
      */
@@ -505,6 +539,152 @@ public class DataManager {
         }
     }
     
+    // ---------- STAFF METHODS ----------
+    
+    /**
+     * Get all staff members
+     * @return List of staff members
+     */
+    public ArrayList<Staff> getStaff() {
+        return staff;
+    }
+    
+    /**
+     * Add or update a staff member
+     * @param staffMember The staff member to add or update
+     */
+    public void saveStaffMember(Staff staffMember) {
+        boolean found = false;
+        for (int i = 0; i < staff.size(); i++) {
+            if (staff.get(i).getStaffId() == staffMember.getStaffId()) {
+                staff.set(i, staffMember);
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            staff.add(staffMember);
+        }
+        
+        saveStaff(staff);
+        
+        // Also update in the users list (if exists)
+        boolean userFound = false;
+        for (int i = 0; i < users.size(); i++) {
+            if (users.get(i).getUserName().equals(staffMember.getUserName())) {
+                users.set(i, staffMember);
+                userFound = true;
+                break;
+            }
+        }
+        
+        if (!userFound) {
+            users.add(staffMember);
+        }
+        
+        saveUsers(users);
+    }
+    
+    /**
+     * Delete a staff member
+     * @param staffId The ID of the staff member to delete
+     * @return true if deleted, false if not found
+     */
+    public boolean deleteStaffMember(int staffId) {
+        Staff toRemove = null;
+        
+        // Find the staff member
+        for (Staff s : staff) {
+            if (s.getStaffId() == staffId) {
+                toRemove = s;
+                break;
+            }
+        }
+        
+        if (toRemove != null) {
+            // Remove from staff list
+            staff.remove(toRemove);
+            saveStaff(staff);
+            
+            // Also remove from users list
+            for (int i = 0; i < users.size(); i++) {
+                if (users.get(i) instanceof Staff && 
+                    ((Staff)users.get(i)).getStaffId() == staffId) {
+                    users.remove(i);
+                    break;
+                }
+            }
+            saveUsers(users);
+            
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Load staff from file
+     * @return List of staff members
+     */
+    private ArrayList<Staff> loadStaff() {
+        ArrayList<Staff> result = new ArrayList<>();
+        try (FileInputStream fileIn = new FileInputStream(STAFF_FILE);
+             ObjectInputStream in = new ObjectInputStream(fileIn)) {
+            
+            while (true) {
+                try {
+                    Staff staffMember = (Staff) in.readObject();
+                    if (staffMember != null) {
+                        result.add(staffMember);
+                    }
+                } catch (EOFException e) {
+                    break;
+                }
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Info: Could not load staff file. " + e.getMessage());
+        }
+        
+        // Also check the users list for Staff objects to ensure we have all staff
+        for (User user : users) {
+            if (user instanceof Staff) {
+                Staff staffUser = (Staff) user;
+                boolean found = false;
+                
+                for (Staff existingStaff : result) {
+                    if (existingStaff.getStaffId() == staffUser.getStaffId()) {
+                        found = true;
+                        break;
+                    }
+                }
+                
+                if (!found) {
+                    result.add(staffUser);
+                }
+            }
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Save staff to file
+     * @param staffList List of staff members to save
+     */
+    private void saveStaff(ArrayList<Staff> staffList) {
+        ensureDirectoryExists();
+        try (FileOutputStream fileOut = new FileOutputStream(STAFF_FILE);
+             ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
+            
+            for (Staff staffMember : staffList) {
+                out.writeObject(staffMember);
+            }
+        } catch (IOException e) {
+            System.out.println("Error saving staff: " + e.getMessage());
+        }
+    }
+    
     // ---------- CUSTOMER METHODS ----------
     
     /**
@@ -513,6 +693,80 @@ public class DataManager {
      */
     public ArrayList<Customer> getCustomers() {
         return customers;
+    }
+    
+    /**
+     * Add or update a customer
+     * @param customer The customer to add or update
+     */
+    public void saveCustomer(Customer customer) {
+        boolean found = false;
+        for (int i = 0; i < customers.size(); i++) {
+            if (customers.get(i).getId() == customer.getId()) {
+                customers.set(i, customer);
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            customers.add(customer);
+        }
+        
+        saveCustomers(customers);
+        
+        // Also update in the users list (if exists)
+        boolean userFound = false;
+        for (int i = 0; i < users.size(); i++) {
+            if (users.get(i).getUserName().equals(customer.getUserName())) {
+                users.set(i, customer);
+                userFound = true;
+                break;
+            }
+        }
+        
+        if (!userFound) {
+            users.add(customer);
+        }
+        
+        saveUsers(users);
+    }
+    
+    /**
+     * Delete a customer
+     * @param customerId The ID of the customer to delete
+     * @return true if deleted, false if not found
+     */
+    public boolean deleteCustomer(int customerId) {
+        Customer toRemove = null;
+        
+        // Find the customer
+        for (Customer c : customers) {
+            if (c.getId() == customerId) {
+                toRemove = c;
+                break;
+            }
+        }
+        
+        if (toRemove != null) {
+            // Remove from customers list
+            customers.remove(toRemove);
+            saveCustomers(customers);
+            
+            // Also remove from users list
+            for (int i = 0; i < users.size(); i++) {
+                if (users.get(i) instanceof Customer && 
+                    ((Customer)users.get(i)).getId() == customerId) {
+                    users.remove(i);
+                    break;
+                }
+            }
+            saveUsers(users);
+            
+            return true;
+        }
+        
+        return false;
     }
     
     /**
@@ -537,6 +791,26 @@ public class DataManager {
         } catch (IOException | ClassNotFoundException e) {
             System.out.println("Info: Could not load customers file. " + e.getMessage());
         }
+        
+        // Also check the users list for Customer objects to ensure we have all customers
+        for (User user : users) {
+            if (user instanceof Customer) {
+                Customer customerUser = (Customer) user;
+                boolean found = false;
+                
+                for (Customer existingCustomer : result) {
+                    if (existingCustomer.getId() == customerUser.getId()) {
+                        found = true;
+                        break;
+                    }
+                }
+                
+                if (!found) {
+                    result.add(customerUser);
+                }
+            }
+        }
+        
         return result;
     }
     
@@ -544,7 +818,7 @@ public class DataManager {
      * Save customers to file
      * @param customersList List of customers to save
      */
-    public static void saveCustomers(ArrayList<Customer> customersList) {
+    public static  void saveCustomers(ArrayList<Customer> customersList) {
         ensureDirectoryExists();
         try (FileOutputStream fileOut = new FileOutputStream(CUSTOMERS_FILE);
              ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
@@ -561,7 +835,7 @@ public class DataManager {
     
     /**
      * Get next available ID for a specific entity type
-     * @param entityType The type of entity ("event", "equipment", "rental", "invoice")
+     * @param entityType The type of entity ("event", "equipment", "rental", "invoice", "staff", "customer")
      * @return The next available ID
      */
     public int getNextId(String entityType) {
@@ -596,6 +870,13 @@ public class DataManager {
                     }
                 }
                 break;
+            case "staff":
+                for (Staff staffMember : staff) {
+                    if (staffMember.getStaffId() > maxId) {
+                        maxId = staffMember.getStaffId();
+                    }
+                }
+                break;
             case "customer":
                 for (Customer customer : customers) {
                     if (customer.getId() > maxId) {
@@ -606,5 +887,63 @@ public class DataManager {
         }
         
         return maxId + 1;
+    }
+    
+    /**
+     * Find a user by username
+     * @param username The username to search for
+     * @return The user if found, null otherwise
+     */
+    public User findUserByUsername(String username) {
+        for (User user : users) {
+            if (user.getUserName().equals(username)) {
+                return user;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Find a staff member by User
+     * @param user The user to find staff for
+     * @return The staff member if found, null otherwise
+     */
+    public Staff findStaffByUser(User user) {
+        // If the user is a Staff, we can just cast
+        if (user instanceof Staff) {
+            return (Staff) user;
+        }
+        
+        // Otherwise, search by username or email
+        for (Staff s : staff) {
+            if (s.getUserName().equals(user.getUserName()) || 
+                s.getEmail().equals(user.getEmail())) {
+                return s;
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Find a customer by User
+     * @param user The user to find customer for
+     * @return The customer if found, null otherwise
+     */
+    public Customer findCustomerByUser(User user) {
+        // If the user is a Customer, we can just cast
+        if (user instanceof Customer) {
+            return (Customer) user;
+        }
+        
+        // Otherwise, search by username or email
+        for (Customer c : customers) {
+            if (c.getUserName().equals(user.getUserName()) || 
+                c.getEmail().equals(user.getEmail())) {
+                return c;
+            }
+        }
+        
+        return null;
     }
 }

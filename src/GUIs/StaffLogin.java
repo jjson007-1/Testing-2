@@ -104,9 +104,12 @@ public class StaffLogin extends JFrame implements ActionListener {
             User user = authenticateUser(username, password);
             if (user != null) {
                 // Find associated staff
-                Staff staff = findStaffByUserId(user);
+                Staff staff = findStaffByUser(user);
                 
                 if (staff != null) {
+                    // Set current user in BaseGUI for session management
+                    BaseGUI.setCurrentUser(staff.getStaffId(), "staff", staff.getUserName());
+                    
                     // Login successful, navigate to staff dashboard
                     JOptionPane.showMessageDialog(this, 
                         "Login successful. Welcome " + staff.getFullName() + "!", 
@@ -117,7 +120,7 @@ public class StaffLogin extends JFrame implements ActionListener {
                     new StaffDashboard(staff.getStaffId());
                 } else {
                     JOptionPane.showMessageDialog(this, 
-                        "Staff account not found.", 
+                        "Staff account not found. This user is not authorized as staff.", 
                         "Login Error", 
                         JOptionPane.ERROR_MESSAGE);
                 }
@@ -132,12 +135,15 @@ public class StaffLogin extends JFrame implements ActionListener {
     
     /**
      * Authenticate user with data manager
+     * @param username Username or email
+     * @param password Password
+     * @return User object if authenticated, null otherwise
      */
     private User authenticateUser(String username, String password) {
         ArrayList<User> users = dataManager.getUsers();
         
         for (User user : users) {
-            // Check username match
+            // Check username match (or email)
             if (user.getUserName().equals(username) || user.getEmail().equals(username)) {
                 // Check password match
                 if (user.getPassword().equals(password)) {
@@ -151,23 +157,28 @@ public class StaffLogin extends JFrame implements ActionListener {
     
     /**
      * Find staff associated with user
+     * @param user User object to find staff for
+     * @return Staff object if found, null otherwise
      */
-    private Staff findStaffByUserId(User user) {
-        // In a real application, this would query from a staff table that links to users
-        // For this demo, we'll create a sample staff member
+    private Staff findStaffByUser(User user) {
+        // In a real application with a proper database, we would query the staff table
+        // with the user's ID. For this implementation, we'll use a simple check.
         
-        // Check if the username contains "staff" as a simple way to identify staff accounts
+        // Since our Staff objects extend User, we could implement this as a direct check:
+        if (user instanceof Staff) {
+            return (Staff) user;
+        }
+        
+        // For a more realistic implementation where User and Staff are stored separately:
+        // Check if the user has a staff account based on email (or other identifier)
+        // This could be improved by having a proper user_id foreign key in the staff table
+        ArrayList<Staff> staffMembers = new ArrayList<>(); // This would come from dataManager.getStaff() in a real implementation
+        
+        // For demo purposes, create a sample staff if username contains "staff"
         if (user.getUserName().toLowerCase().contains("staff") || 
             user.getEmail().toLowerCase().contains("staff")) {
             
-            Staff staff = new Staff();
-            staff.setStaffId(1);
-            staff.setFullName(user.getFullName());
-            staff.setEmail(user.getEmail());
-            staff.setPhone(user.getPhone());
-            staff.setPosition("Manager");
-            staff.setStatus("Active");
-            
+            Staff staff = new Staff(user, 1, "Manager", "Active", "Administrator");
             return staff;
         }
         

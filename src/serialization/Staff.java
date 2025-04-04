@@ -12,7 +12,7 @@ public class Staff extends User implements Serializable {
     private int staffId;
     private String position;
     private String status;
-    private String staffRole;  // From database schema
+    private String staffRole;
 
     /**
      * Default Constructor
@@ -21,23 +21,12 @@ public class Staff extends User implements Serializable {
         super(); // Call User's default constructor
         this.staffId = 0;
         this.position = "";
-        this.status = "";
+        this.status = "Active";
         this.staffRole = "";
     }
 
     /**
-     * Constructor with User data
-     * 
-     * @param fullName The staff member's full name
-     * @param userName The staff member's username
-     * @param password The staff member's password
-     * @param phone The staff member's phone number
-     * @param email The staff member's email
-     * @param address The staff member's address
-     * @param staffId The staff member's ID
-     * @param position The staff member's position
-     * @param status The staff member's status
-     * @param staffRole The staff member's role
+     * Full constructor with all User fields and Staff fields
      */
     public Staff(String fullName, String userName, String password, int phone, 
                 String email, String address, int staffId, String position, 
@@ -50,23 +39,31 @@ public class Staff extends User implements Serializable {
     }
     
     /**
-     * Constructor with only staff-specific fields
-     * This is useful when creating a staff member from an existing user
-     * 
-     * @param staffId The staff member's ID
-     * @param position The staff member's position
-     * @param status The staff member's status
-     * @param staffRole The staff member's role
+     * Constructor that creates a Staff from an existing User
+     * Useful for converting a regular User to a Staff member
      */
-    public Staff(int staffId, String position, String status, String staffRole) {
-        super();
+    public Staff(User user, int staffId, String position, String status, String staffRole) {
+        super(user.getFullName(), user.getUserName(), user.getPassword(), 
+              user.getPhone(), user.getEmail(), user.getAddress());
         this.staffId = staffId;
         this.position = position;
         this.status = status;
         this.staffRole = staffRole;
     }
+    
+    /**
+     * Simplified constructor for creating a Staff member with basic information
+     */
+    public Staff(String fullName, String userName, String password, int phone, 
+                String email, String staffRole) {
+        super(fullName, userName, password, phone, email, "");
+        this.staffId = 0; // Will be set later
+        this.position = "Staff";
+        this.status = "Active";
+        this.staffRole = staffRole;
+    }
 
-    // Getters and Setters for Staff-specific fields
+    // Getters and Setters
     public int getStaffId() {
         return staffId;
     }
