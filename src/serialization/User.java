@@ -117,7 +117,7 @@ public class User implements Serializable{
 						//Add employee to the list of users
 						usersList.add(user);
 					}else if(user == null) {
-						break; //Leave the while loop
+						break;
 					}
 				} catch (ClassNotFoundException e) {
 					System.out.println("Object could not be converted to a User");

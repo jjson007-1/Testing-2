@@ -100,33 +100,21 @@ public class StaffLogin extends JFrame implements ActionListener {
                 return;
             }
             
-            // Authenticate user
-            User user = authenticateUser(username, password);
-            if (user != null) {
-                // Find associated staff
-                Staff staff = findStaffByUser(user);
+            // Authenticate
+            Staff staff = authenticateStaff(username, password);
+            
+            if (staff != null) {
+                // Login successful, navigate to staff dashboard
+                JOptionPane.showMessageDialog(this, 
+                    "Login successful. Welcome " + staff.getFullName() + "!", 
+                    "Login Success", 
+                    JOptionPane.INFORMATION_MESSAGE);
                 
-                if (staff != null) {
-                    // Set current user in BaseGUI for session management
-                    BaseGUI.setCurrentUser(staff.getStaffId(), "staff", staff.getUserName());
-                    
-                    // Login successful, navigate to staff dashboard
-                    JOptionPane.showMessageDialog(this, 
-                        "Login successful. Welcome " + staff.getFullName() + "!", 
-                        "Login Success", 
-                        JOptionPane.INFORMATION_MESSAGE);
-                    
-                    this.dispose();
-                    new StaffDashboard(staff.getStaffId());
-                } else {
-                    JOptionPane.showMessageDialog(this, 
-                        "Staff account not found. This user is not authorized as staff.", 
-                        "Login Error", 
-                        JOptionPane.ERROR_MESSAGE);
-                }
+                this.dispose();
+                new StaffDashboard(staff.getStaffId());
             } else {
                 JOptionPane.showMessageDialog(this, 
-                    "Invalid username or password.", 
+                    "Invalid username or password, or you don't have staff privileges.", 
                     "Login Error", 
                     JOptionPane.ERROR_MESSAGE);
             }
@@ -134,57 +122,30 @@ public class StaffLogin extends JFrame implements ActionListener {
     }
     
     /**
-     * Authenticate user with data manager
-     * @param username Username or email
-     * @param password Password
-     * @return User object if authenticated, null otherwise
+     * Authenticate staff with data manager
      */
-    private User authenticateUser(String username, String password) {
+    private Staff authenticateStaff(String username, String password) {
         ArrayList<User> users = dataManager.getUsers();
         
         for (User user : users) {
-            // Check username match (or email)
-            if (user.getUserName().equals(username) || user.getEmail().equals(username)) {
-                // Check password match
-                if (user.getPassword().equals(password)) {
-                    return user;
+            // Check if it's a Staff instance
+            if (user instanceof Staff) {
+                Staff staff = (Staff) user;
+                
+                // Check username and password
+                if ((staff.getUserName().equals(username) || staff.getEmail().equals(username)) 
+                        && staff.getPassword().equals(password)) {
+                    return staff;
                 }
             }
         }
         
-        return null; // No matching user found
+        return null; // No matching staff found
     }
     
     /**
-     * Find staff associated with user
-     * @param user User object to find staff for
-     * @return Staff object if found, null otherwise
+     * Main method for testing
      */
-    private Staff findStaffByUser(User user) {
-        // In a real application with a proper database, we would query the staff table
-        // with the user's ID. For this implementation, we'll use a simple check.
-        
-        // Since our Staff objects extend User, we could implement this as a direct check:
-        if (user instanceof Staff) {
-            return (Staff) user;
-        }
-        
-        // For a more realistic implementation where User and Staff are stored separately:
-        // Check if the user has a staff account based on email (or other identifier)
-        // This could be improved by having a proper user_id foreign key in the staff table
-        ArrayList<Staff> staffMembers = new ArrayList<>(); // This would come from dataManager.getStaff() in a real implementation
-        
-        // For demo purposes, create a sample staff if username contains "staff"
-        if (user.getUserName().toLowerCase().contains("staff") || 
-            user.getEmail().toLowerCase().contains("staff")) {
-            
-            Staff staff = new Staff(user, 1, "Manager", "Active", "Administrator");
-            return staff;
-        }
-        
-        return null;
-    }
-    
     public static void main(String[] args) {
         new StaffLogin();
     }

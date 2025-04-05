@@ -61,7 +61,7 @@ public class StaffDashboard extends BaseGUI implements ActionListener {
     // Current staff
     private Staff currentStaff;
     
-    /**
+    /*
      * Constructor
      *  staffId The ID of the logged-in staff member
      */
@@ -81,13 +81,11 @@ public class StaffDashboard extends BaseGUI implements ActionListener {
         this.setVisible(true);
     }
     
-    /**
+    /*
      * Load staff data from storage
      *  staffId The staff ID to load
      */
     private void loadStaffData(int staffId) {
-        // This should load staff data from storage
-        // For now, create a placeholder staff
         currentStaff = new Staff();
         currentStaff.setStaffId(staffId);
         currentStaff.setFullName("Jane Doe");
@@ -398,19 +396,22 @@ public class StaffDashboard extends BaseGUI implements ActionListener {
         if (source == dashboardButton) {
             cardLayout.show(contentPanel, "dashboard");
         } else if (source == equipmentButton) {
-            // Either show equipment panel or open equipment management window
-            // For a more complete solution, load the EquipmentManagementGUI
-            navigateTo(new EquipmentManagementGUI());
+            this.setVisible(false);
+            new EquipmentManagementGUI(this);
         } else if (source == eventsButton) {
-            cardLayout.show(contentPanel, "events");
+            this.setVisible(false);
+            new EventManagementGUI(this);
         } else if (source == rentalsButton) {
-            cardLayout.show(contentPanel, "rentals");
+        	this.setVisible(false);
+            new RentalManagementGUI(this);
         } else if (source == customersButton) {
             cardLayout.show(contentPanel, "customers");
         } else if (source == invoicesButton) {
-            cardLayout.show(contentPanel, "invoices");
+        	this.setVisible(false);
+            new InvoiceManagementGUI(this);
         } else if (source == reportsButton) {
-            cardLayout.show(contentPanel, "reports");
+        	this.setVisible(false);
+            new ReportGUI(this);
         } else if (source == logoutButton) {
             if (showConfirmDialog("Are you sure you want to logout?")) {
                 // Clean up resources

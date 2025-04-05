@@ -12,7 +12,6 @@ import java.util.ArrayList;
 /**
  * Centralized manager for all data operations.
  * Provides methods to load and save all types of data.
- * Updated to handle User-Staff-Customer inheritance properly.
  */
 public class DataManager {
     // File paths
@@ -25,7 +24,6 @@ public class DataManager {
     private static final String STAFF_FILE = DATA_DIRECTORY + "StaffDB.ser";  // New file for Staff
     private static final String CUSTOMERS_FILE = DATA_DIRECTORY + "CustomersDB.ser";
     
-    // Singleton instance
     private static DataManager instance;
     
     // Data collections
@@ -37,9 +35,7 @@ public class DataManager {
     private ArrayList<Staff> staff;  // New collection for Staff
     private ArrayList<Customer> customers;
     
-    /**
-     * Private constructor for singleton pattern
-     */
+   
     private DataManager() {
         // Initialize data collections
         events = new ArrayList<>();
@@ -105,7 +101,6 @@ public class DataManager {
     
     /**
      * Get all events
-     * @return List of events
      */
     public ArrayList<Event> getEvents() {
         return events;
@@ -113,7 +108,6 @@ public class DataManager {
     
     /**
      * Add or update an event
-     * @param event The event to add or update
      */
     public void saveEvent(Event event) {
         // Check if event already exists
@@ -135,8 +129,6 @@ public class DataManager {
     
     /**
      * Delete an event
-     * @param eventId The ID of the event to delete
-     * @return true if deleted, false if not found
      */
     public boolean deleteEvent(int eventId) {
         for (int i = 0; i < events.size(); i++) {
@@ -151,7 +143,6 @@ public class DataManager {
     
     /**
      * Load events from file
-     * @return List of events
      */
     private ArrayList<Event> loadEvents() {
         ArrayList<Event> result = new ArrayList<>();
@@ -177,7 +168,6 @@ public class DataManager {
     
     /**
      * Save events to file
-     * @param eventsList List of events to save
      */
     private void saveEvents(ArrayList<Event> eventsList) {
         ensureDirectoryExists();
@@ -196,7 +186,6 @@ public class DataManager {
     
     /**
      * Get all equipment
-     * @return List of equipment
      */
     public ArrayList<Equipment> getEquipment() {
         return equipment;
@@ -204,7 +193,6 @@ public class DataManager {
     
     /**
      * Add or update equipment
-     * @param item The equipment to add or update
      */
     public void saveEquipment(Equipment item) {
         boolean found = false;
@@ -225,8 +213,6 @@ public class DataManager {
     
     /**
      * Delete equipment
-     * @param equipmentId The ID of the equipment to delete
-     * @return true if deleted, false if not found
      */
     public boolean deleteEquipment(int equipmentId) {
         for (int i = 0; i < equipment.size(); i++) {
@@ -241,7 +227,6 @@ public class DataManager {
     
     /**
      * Load equipment from file
-     * @return List of equipment
      */
     private ArrayList<Equipment> loadEquipment() {
         ArrayList<Equipment> result = new ArrayList<>();
@@ -266,7 +251,6 @@ public class DataManager {
     
     /**
      * Save equipment to file
-     * @param equipmentList List of equipment to save
      */
     private void saveEquipment(ArrayList<Equipment> equipmentList) {
         ensureDirectoryExists();
@@ -285,7 +269,6 @@ public class DataManager {
     
     /**
      * Get all rental orders
-     * @return List of rental orders
      */
     public ArrayList<RentalOrder> getRentals() {
         return rentals;
@@ -293,7 +276,6 @@ public class DataManager {
     
     /**
      * Add or update a rental order
-     * @param rental The rental order to add or update
      */
     public void saveRental(RentalOrder rental) {
         boolean found = false;
@@ -314,8 +296,6 @@ public class DataManager {
     
     /**
      * Delete a rental order
-     * @param rentalId The ID of the rental order to delete
-     * @return true if deleted, false if not found
      */
     public boolean deleteRental(int rentalId) {
         for (int i = 0; i < rentals.size(); i++) {
@@ -330,7 +310,6 @@ public class DataManager {
     
     /**
      * Load rental orders from file
-     * @return List of rental orders
      */
     private ArrayList<RentalOrder> loadRentals() {
         ArrayList<RentalOrder> result = new ArrayList<>();
@@ -355,7 +334,6 @@ public class DataManager {
     
     /**
      * Save rental orders to file
-     * @param rentalsList List of rental orders to save
      */
     private void saveRentals(ArrayList<RentalOrder> rentalsList) {
         ensureDirectoryExists();
@@ -374,7 +352,6 @@ public class DataManager {
     
     /**
      * Get all invoices
-     * @return List of invoices
      */
     public ArrayList<Invoice> getInvoices() {
         return invoices;
@@ -382,7 +359,6 @@ public class DataManager {
     
     /**
      * Add or update an invoice
-     * @param invoice The invoice to add or update
      */
     public void saveInvoice(Invoice invoice) {
         boolean found = false;
@@ -403,8 +379,6 @@ public class DataManager {
     
     /**
      * Delete an invoice
-     * @param invoiceId The ID of the invoice to delete
-     * @return true if deleted, false if not found
      */
     public boolean deleteInvoice(int invoiceId) {
         for (int i = 0; i < invoices.size(); i++) {
@@ -419,7 +393,6 @@ public class DataManager {
     
     /**
      * Load invoices from file
-     * @return List of invoices
      */
     private ArrayList<Invoice> loadInvoices() {
         ArrayList<Invoice> result = new ArrayList<>();
@@ -444,7 +417,6 @@ public class DataManager {
     
     /**
      * Save invoices to file
-     * @param invoicesList List of invoices to save
      */
     private void saveInvoices(ArrayList<Invoice> invoicesList) {
         ensureDirectoryExists();
@@ -463,7 +435,6 @@ public class DataManager {
     
     /**
      * Get all users
-     * @return List of users
      */
     public ArrayList<User> getUsers() {
         return users;
@@ -471,7 +442,6 @@ public class DataManager {
     
     /**
      * Add or update a user
-     * @param user The user to add or update
      */
     public void saveUser(User user) {
         boolean found = false;
@@ -499,7 +469,6 @@ public class DataManager {
     
     /**
      * Load users from file
-     * @return List of users
      */
     private ArrayList<User> loadUsers() {
         ArrayList<User> result = new ArrayList<>();
@@ -524,7 +493,6 @@ public class DataManager {
     
     /**
      * Save users to file
-     * @param usersList List of users to save
      */
     public void saveUsers(ArrayList<User> usersList) {
         ensureDirectoryExists();
@@ -539,11 +507,9 @@ public class DataManager {
         }
     }
     
-    // ---------- STAFF METHODS ----------
     
     /**
      * Get all staff members
-     * @return List of staff members
      */
     public ArrayList<Staff> getStaff() {
         return staff;
@@ -551,7 +517,6 @@ public class DataManager {
     
     /**
      * Add or update a staff member
-     * @param staffMember The staff member to add or update
      */
     public void saveStaffMember(Staff staffMember) {
         boolean found = false;
@@ -588,8 +553,6 @@ public class DataManager {
     
     /**
      * Delete a staff member
-     * @param staffId The ID of the staff member to delete
-     * @return true if deleted, false if not found
      */
     public boolean deleteStaffMember(int staffId) {
         Staff toRemove = null;
@@ -625,7 +588,6 @@ public class DataManager {
     
     /**
      * Load staff from file
-     * @return List of staff members
      */
     private ArrayList<Staff> loadStaff() {
         ArrayList<Staff> result = new ArrayList<>();
@@ -670,7 +632,6 @@ public class DataManager {
     
     /**
      * Save staff to file
-     * @param staffList List of staff members to save
      */
     private void saveStaff(ArrayList<Staff> staffList) {
         ensureDirectoryExists();
@@ -689,7 +650,6 @@ public class DataManager {
     
     /**
      * Get all customers
-     * @return List of customers
      */
     public ArrayList<Customer> getCustomers() {
         return customers;
@@ -697,7 +657,6 @@ public class DataManager {
     
     /**
      * Add or update a customer
-     * @param customer The customer to add or update
      */
     public void saveCustomer(Customer customer) {
         boolean found = false;
@@ -734,8 +693,6 @@ public class DataManager {
     
     /**
      * Delete a customer
-     * @param customerId The ID of the customer to delete
-     * @return true if deleted, false if not found
      */
     public boolean deleteCustomer(int customerId) {
         Customer toRemove = null;
@@ -771,7 +728,6 @@ public class DataManager {
     
     /**
      * Load customers from file
-     * @return List of customers
      */
     private ArrayList<Customer> loadCustomers() {
         ArrayList<Customer> result = new ArrayList<>();
@@ -816,7 +772,6 @@ public class DataManager {
     
     /**
      * Save customers to file
-     * @param customersList List of customers to save
      */
     public static  void saveCustomers(ArrayList<Customer> customersList) {
         ensureDirectoryExists();
@@ -835,8 +790,6 @@ public class DataManager {
     
     /**
      * Get next available ID for a specific entity type
-     * @param entityType The type of entity ("event", "equipment", "rental", "invoice", "staff", "customer")
-     * @return The next available ID
      */
     public int getNextId(String entityType) {
         int maxId = 0;
@@ -891,8 +844,6 @@ public class DataManager {
     
     /**
      * Find a user by username
-     * @param username The username to search for
-     * @return The user if found, null otherwise
      */
     public User findUserByUsername(String username) {
         for (User user : users) {
@@ -905,8 +856,6 @@ public class DataManager {
     
     /**
      * Find a staff member by User
-     * @param user The user to find staff for
-     * @return The staff member if found, null otherwise
      */
     public Staff findStaffByUser(User user) {
         // If the user is a Staff, we can just cast
@@ -927,8 +876,6 @@ public class DataManager {
     
     /**
      * Find a customer by User
-     * @param user The user to find customer for
-     * @return The customer if found, null otherwise
      */
     public Customer findCustomerByUser(User user) {
         // If the user is a Customer, we can just cast

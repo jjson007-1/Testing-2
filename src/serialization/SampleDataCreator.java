@@ -60,86 +60,51 @@ public class SampleDataCreator {
         ArrayList<User> users = dataManager.getUsers();
         ArrayList<Staff> staffList = new ArrayList<>();
         
-        // Find users we can convert to staff
+        // If we already have staff users in our user list, we'll skip creation
+        boolean hasStaffUsers = false;
         for (User user : users) {
-            // Look for users that might be staff based on username or email
-            if (user.getUserName().contains("staff") || 
-                user.getUserName().contains("admin") || 
-                user.getEmail().contains("staff") || 
-                user.getEmail().contains("admin")) {
-                
-                // Skip if already a Staff object
-                if (user instanceof Staff) {
-                    staffList.add((Staff)user);
-                    continue;
-                }
-                
-                // Create a new Staff from this User
-                int staffId = dataManager.getNextId("staff");
-                Staff staff = new Staff(
-                    user.getFullName(),
-                    user.getUserName(),
-                    user.getPassword(),
-                    user.getPhone(),
-                    user.getEmail(),
-                    user.getAddress(),
-                    staffId,
-                    "Manager",
-                    "Active",
-                    "Administrator"
-                );
-                
-                staffList.add(staff);
-                
-                // Replace the User with Staff in users list
-                users.remove(user);
-                users.add(staff);
+            if (user instanceof Staff) {
+                hasStaffUsers = true;
+                break;
             }
         }
         
-        // If no staff members were found, create some default ones
-        if (staffList.isEmpty()) {
-            // Create default admin
-            int staffId = dataManager.getNextId("staff");
-            Staff adminStaff = new Staff(
-                "Admin User",
-                "admin",
-                "admin123",
-                5551234,
-                "admin@example.com",
-                "123 Admin St",
-                staffId,
-                "Administrator",
-                "Active",
-                "System Admin"
-            );
-            staffList.add(adminStaff);
-            users.add(adminStaff);
-            
-            // Create default staff
-            staffId = dataManager.getNextId("staff");
-            Staff defaultStaff = new Staff(
-                "Staff User",
-                "staff",
-                "staff123",
-                5552345,
-                "staff@example.com",
-                "456 Staff St",
-                staffId,
-                "Employee",
-                "Active",
-                "Assistant"
-            );
-            staffList.add(defaultStaff);
-            users.add(defaultStaff);
+        if (hasStaffUsers) {
+            System.out.println("Staff already exist, skipping sample staff creation.");
+            return;
         }
         
-        // Save the updated users and staff lists
+        // Find users we want to convert to staff
+        User staffUser = null;
+        User managerUser = null;
+        
+        for (User user : users) {
+            if (user.getUserName().equals("staff")) {
+                staffUser = user;
+            } else if (user.getUserName().equals("manager")) {
+                managerUser = user;
+            }
+        }
+        
+        // Create staff from users
+        if (staffUser != null) {
+            Staff staff = new Staff(1, "Regular Staff", "Active", "Assistant");
+            users.remove(staffUser); // Remove the base user
+            users.add(staff); // Add the Staff that extends User
+            staffList.add(staff);
+        }
+        
+        if (managerUser != null) {
+            Staff manager = new Staff(2, "Manager", "Active", "Manager");
+            users.remove(managerUser);
+            users.add(manager);
+            staffList.add(manager);
+        }
+        
+        // Save updated users list
         dataManager.saveUsers(users);
-        for (Staff staff : staffList) {
-            dataManager.saveStaffMember(staff);
-        }
         
+        // In a real implementation, we would save staffList to its own table
         System.out.println("Created " + staffList.size() + " sample staff members.");
     }
     
@@ -173,7 +138,7 @@ public class SampleDataCreator {
         
         // Create customers from users
         if (johnUser != null) {
-            Customer john = new Customer(johnUser, 1);
+            Customer john = new Customer();
             customers.add(john);
             
             // Also replace the User with a Customer in the users list
@@ -182,7 +147,7 @@ public class SampleDataCreator {
         }
         
         if (janeUser != null) {
-            Customer jane = new Customer(janeUser, 2);
+            Customer jane = new Customer();
             customers.add(jane);
             
             // Also replace the User with a Customer in the users list

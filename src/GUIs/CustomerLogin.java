@@ -34,6 +34,9 @@ public class CustomerLogin extends JFrame implements ActionListener{
     // Data manager
     private DataManager dataManager;
     
+    // Hold registration data between steps
+    private String regUsername, regPassword;
+    
     public CustomerLogin(){
         this.setTitle("Login");
         this.setSize(600, 350);
@@ -93,7 +96,7 @@ public class CustomerLogin extends JFrame implements ActionListener{
     
     @Override
     public void actionPerformed(ActionEvent e) {
-        if(e.getSource() == registerBtn) {
+        if(e.getSource()== registerBtn) {
             styleButton(loginBtn, new Color(70, 70, 70));
             styleButton(registerBtn, new Color(255, 100, 50));
             rightPanel.removeAll();
@@ -103,7 +106,7 @@ public class CustomerLogin extends JFrame implements ActionListener{
             this.setTitle("Register");
         }
         
-        if(e.getSource() == loginBtn) {
+        if(e.getSource()== loginBtn) {
             styleButton(loginBtn, new Color(255, 100, 50));
             styleButton(registerBtn, new Color(70, 70, 70));
             rightPanel.removeAll();
@@ -113,7 +116,7 @@ public class CustomerLogin extends JFrame implements ActionListener{
             this.setTitle("Login");
         }
         
-        if(e.getSource() == enterButton) {
+        if(e.getSource()== enterButton) {
             // Handle login
             String username = userNameField.getText().trim();
             String password = new String(userPasswordField.getPassword());
@@ -126,30 +129,18 @@ public class CustomerLogin extends JFrame implements ActionListener{
                 return;
             }
             
-            // Authenticate user
-            User user = authenticateUser(username, password);
-            if (user != null) {
-                // Find associated customer
-                Customer customer = findCustomerByUser(user);
+            // Authenticate
+            Customer customer = authenticateCustomer(username, password);
+            
+            if (customer != null) {
+                // Login successful, navigate to customer dashboard
+                JOptionPane.showMessageDialog(this, 
+                    "Login successful. Welcome " + customer.getFullName() + "!", 
+                    "Login Success", 
+                    JOptionPane.INFORMATION_MESSAGE);
                 
-                if (customer != null) {
-                    // Set current user in BaseGUI for session management
-                    BaseGUI.setCurrentUser(customer.getId(), "customer", customer.getUserName());
-                    
-                    // Login successful, navigate to customer dashboard
-                    JOptionPane.showMessageDialog(this, 
-                        "Login successful. Welcome " + customer.getFullName() + "!", 
-                        "Login Success", 
-                        JOptionPane.INFORMATION_MESSAGE);
-                    
-                    this.dispose();
-                    new CustomerDashboard(customer.getId());
-                } else {
-                    JOptionPane.showMessageDialog(this, 
-                        "Customer account not found.", 
-                        "Login Error", 
-                        JOptionPane.ERROR_MESSAGE);
-                }
+                this.dispose();
+                new CustomerDashboard(customer.getId());
             } else {
                 JOptionPane.showMessageDialog(this, 
                     "Invalid username or password.", 
@@ -158,12 +149,16 @@ public class CustomerLogin extends JFrame implements ActionListener{
             }
         }
         
-        if(e.getSource() == submitButton) {
+        if(e.getSource()== submitButton) {
             registerUser();
         }
         
-        if(e.getSource() == nextButton) {
+        if(e.getSource()== nextButton) {
             if (validateFirstRegistrationStep()) {
+                // Save registration data for the next step
+                regUsername = userNameField.getText().trim();
+                regPassword = new String(userPasswordField.getPassword());
+                
                 rightPanel.removeAll();
                 rightPanel.revalidate();
                 rightPanel.repaint();
@@ -173,53 +168,25 @@ public class CustomerLogin extends JFrame implements ActionListener{
     }
     
     /**
-     * Authenticate user with data manager
-     * @param username Username or email to authenticate
-     * @param password Password to check
-     * @return User object if authenticated, null otherwise
+     * Authenticate customer with data manager
      */
-    private User authenticateUser(String username, String password) {
+    private Customer authenticateCustomer(String username, String password) {
         ArrayList<User> users = dataManager.getUsers();
         
         for (User user : users) {
-            // Check username match (or email)
-            if (user.getUserName().equals(username) || user.getEmail().equals(username)) {
-                // Check password match
-                if (user.getPassword().equals(password)) {
-                    return user;
+            // Check if it's a Customer instance
+            if (user instanceof Customer) {
+                Customer customer = (Customer) user;
+                
+                // Check username and password
+                if ((customer.getUserName().equals(username) || customer.getEmail().equals(username)) 
+                        && customer.getPassword().equals(password)) {
+                    return customer;
                 }
             }
         }
         
-        return null; // No matching user found
-    }
-    
-    /**
-     * Find customer associated with user
-     * @param user User object to find customer for
-     * @return Customer object if found, null otherwise
-     */
-    private Customer findCustomerByUser(User user) {
-        // In a real database implementation, we would use JOIN queries
-        // But for this implementation, we'll use a direct check first
-        
-        // Since our Customer objects extend User, we could implement this as a direct check:
-        if (user instanceof Customer) {
-            return (Customer) user;
-        }
-        
-        // For a more realistic implementation where User and Customer are stored separately:
-        ArrayList<Customer> customers = dataManager.getCustomers();
-        
-        for (Customer customer : customers) {
-            // Match by email (ideally would match by user_id)
-            if (customer.getEmail().equals(user.getEmail()) ||
-                customer.getUserName().equals(user.getUserName())) {
-                return customer;
-            }
-        }
-        
-        return null;
+        return null; 
     }
     
     /**
@@ -291,27 +258,20 @@ public class CustomerLogin extends JFrame implements ActionListener{
             return;
         }
         
-        // Create new user
+        // Create full name
         String fullName = firstName + " " + lastName;
-        String username = userNameField.getText().trim();
-        String password = new String(userPasswordField.getPassword());
         
-        // Create base User
-        User newUser = new User(fullName, username, password, 
-                               Integer.parseInt(phone.replaceAll("[^0-9]", "")), 
-                               email, address);
+        // Create new customer (which extends User)
+        int newCustomerId = dataManager.getNextId("customer");
         
-        // Create Customer that extends User
-        Customer newCustomer = new Customer(newUser, dataManager.getNextId("customer"));
+        Customer newCustomer = new Customer(fullName, regUsername, regPassword, 
+                                          Integer.parseInt(phone.replaceAll("[^0-9]", "")), 
+                                          email, address, newCustomerId);
         
         // Save to data manager
         ArrayList<User> users = dataManager.getUsers();
-        users.add(newUser);
+        users.add(newCustomer); // Customer IS-A User, so this works!
         dataManager.saveUsers(users);
-        
-        ArrayList<Customer> customers = dataManager.getCustomers();
-        customers.add(newCustomer);
-        dataManager.saveCustomers(customers);
         
         JOptionPane.showMessageDialog(this, 
             "Registration successful! You can now login.", 

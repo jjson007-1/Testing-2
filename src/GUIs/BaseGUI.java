@@ -62,7 +62,6 @@ public abstract class BaseGUI extends JFrame {
      *  text The button text
      *  color The button background color
      *  listener The action listener for the button
-     * @return A styled JButton
      */
     protected JButton createStyledButton(String text, Color color, ActionListener listener) {
         JButton button = new JButton(text);
@@ -90,7 +89,6 @@ public abstract class BaseGUI extends JFrame {
     
     /**
      * Creates a styled text field with standard properties
-     * @return A styled JTextField
      */
     protected JTextField createStyledTextField() {
         JTextField field = new JTextField();
@@ -105,7 +103,6 @@ public abstract class BaseGUI extends JFrame {
     /**
      * Creates a styled panel with the given color
      *  color The background color
-     * @return A styled JPanel
      */
     protected JPanel createStyledPanel(Color color) {
         JPanel panel = new JPanel();
@@ -142,7 +139,6 @@ public abstract class BaseGUI extends JFrame {
     /**
      * Displays a confirmation dialog
      *  message The confirmation message
-     * @return true if the user confirmed, false otherwise
      */
     protected boolean showConfirmDialog(String message) {
         int result = JOptionPane.showConfirmDialog(
@@ -170,7 +166,6 @@ public abstract class BaseGUI extends JFrame {
      * Validates if a component's text is not empty
      *  component The component to check
      *  fieldName The name of the field (for error message)
-     * @return true if valid, false otherwise
      */
     protected boolean validateNotEmpty(JTextField component, String fieldName) {
         if (component.getText().trim().isEmpty()) {

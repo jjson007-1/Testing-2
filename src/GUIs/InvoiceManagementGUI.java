@@ -51,6 +51,8 @@ public class InvoiceManagementGUI extends JFrame implements ActionListener {
     private JButton markAsPaidButton;
     private JButton printInvoiceButton;
     private JButton backButton;
+    private JFrame previousScreen;
+
     
     // Data manager
     private DataManager dataManager;
@@ -63,11 +65,13 @@ public class InvoiceManagementGUI extends JFrame implements ActionListener {
     /**
      * Constructor
      */
-    public InvoiceManagementGUI() {
+    public InvoiceManagementGUI(JFrame previousScreen) {
         this.setTitle("Invoice Management");
         this.setSize(900, 600);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLocationRelativeTo(null);
+        this.previousScreen = previousScreen;
+
         
         // Get data manager instance
         dataManager = DataManager.getInstance();
@@ -77,6 +81,12 @@ public class InvoiceManagementGUI extends JFrame implements ActionListener {
         setupEventHandlers();
         
         this.setVisible(true);
+    }
+    
+    public InvoiceManagementGUI() {
+        this(new WelcomeGUI());
+        // Hide the WelcomeGUI created as the default previous screen
+        previousScreen.setVisible(false);
     }
     
     /**
@@ -384,9 +394,13 @@ public class InvoiceManagementGUI extends JFrame implements ActionListener {
                     JOptionPane.ERROR_MESSAGE);
             }
         } else if (source == backButton) {
-            // Go back to previous screen
             this.dispose();
-            new WelcomeGUI();
+            
+            if (previousScreen != null) {
+                previousScreen.setVisible(true);
+            } else {
+                new WelcomeGUI(); // Fallback if previous screen is null
+            }
         }
     }
     

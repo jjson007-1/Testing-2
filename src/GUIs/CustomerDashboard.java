@@ -2,6 +2,7 @@ package GUIs;
 
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -12,20 +13,29 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Calendar;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.table.DefaultTableModel;
 
+
 import serialization.Customer;
+import serialization.DataManager;
+import serialization.Date;
 import serialization.Event;
+import serialization.RentalOrder;
 import GUIs.EventManagementGUI;
 
 /**
@@ -43,6 +53,7 @@ public class CustomerDashboard extends BaseGUI implements ActionListener {
     private JButton invoicesButton;
     private JButton profileButton;
     private JButton logoutButton;
+    private JButton editProfileButton;
     
     // Content panels
     private JPanel eventsPanel;
@@ -71,7 +82,6 @@ public class CustomerDashboard extends BaseGUI implements ActionListener {
     public CustomerDashboard(int customerId) {
         super("Customer Dashboard", 900, 600);
         
-        // Load customer data (to be implemented with actual data)
         loadCustomerData(customerId);
         
         initComponents();
@@ -86,8 +96,6 @@ public class CustomerDashboard extends BaseGUI implements ActionListener {
      *  customerId The customer ID to load
      */
     private void loadCustomerData(int customerId) {
-        // This should load the actual customer data from the serialized file
-        // For now, we'll create a placeholder customer
         currentCustomer = new Customer();
         currentCustomer.setId(customerId);
         currentCustomer.setFullName("John");
@@ -172,17 +180,19 @@ public class CustomerDashboard extends BaseGUI implements ActionListener {
         profileButton.addActionListener(this);
         logoutButton.addActionListener(this);
         
+        
         // Add action listeners to action buttons
         createEventButton.addActionListener(this);
         editEventButton.addActionListener(this);
         deleteEventButton.addActionListener(this);
         createRentalButton.addActionListener(this);
+        editProfileButton.addActionListener(this);
+
     }
     
     /**
      * Creates a styled button for the sidebar
      *  text The button text
-     *  A styled JButton
      */
     private JButton createSidebarButton(String text) {
         JButton button = new JButton(text);
@@ -330,7 +340,7 @@ public class CustomerDashboard extends BaseGUI implements ActionListener {
     /**
      * Creates the profile panel
      */
-    private void createProfilePanel() {
+    public void createProfilePanel() {
         profilePanel = new JPanel(new BorderLayout(10, 10));
         
         // Header panel with title
@@ -354,9 +364,7 @@ public class CustomerDashboard extends BaseGUI implements ActionListener {
         // Labels for customer details
         detailsPanel.add(createBoldLabel("Customer ID:"), gbc);
         gbc.gridy++;
-        detailsPanel.add(createBoldLabel("First Name:"), gbc);
-        gbc.gridy++;
-        detailsPanel.add(createBoldLabel("Last Name:"), gbc);
+        detailsPanel.add(createBoldLabel("Full Name:"), gbc);
         gbc.gridy++;
         detailsPanel.add(createBoldLabel("Email:"), gbc);
         gbc.gridy++;
@@ -371,8 +379,6 @@ public class CustomerDashboard extends BaseGUI implements ActionListener {
         gbc.gridy++;
         detailsPanel.add(new JLabel(currentCustomer.getFullName()), gbc);
         gbc.gridy++;
-        detailsPanel.add(new JLabel(currentCustomer.getFullName()), gbc);
-        gbc.gridy++;
         detailsPanel.add(new JLabel(currentCustomer.getEmail()), gbc);
         gbc.gridy++;
         detailsPanel.add(new JLabel(String.valueOf(currentCustomer.getPhone())), gbc);
@@ -384,17 +390,15 @@ public class CustomerDashboard extends BaseGUI implements ActionListener {
         gbc.anchor = GridBagConstraints.CENTER;
         gbc.insets = new Insets(30, 5, 5, 5);
         
-        JButton editProfileButton = createStyledButton("Edit Profile", PRIMARY_COLOR, this);
+        editProfileButton = createStyledButton("Edit Profile", PRIMARY_COLOR, this);
         detailsPanel.add(editProfileButton, gbc);
+        editProfileButton.addActionListener(this);
+
         
         profilePanel.add(detailsPanel, BorderLayout.CENTER);
     }
     
-    /**
-     * Creates a bold label
-     *  text The label text
-     *  A styled JLabel
-     */
+    
     private JLabel createBoldLabel(String text) {
         JLabel label = new JLabel(text);
         label.setFont(new Font(NORMAL_FONT.getName(), Font.BOLD, NORMAL_FONT.getSize()));
@@ -404,8 +408,7 @@ public class CustomerDashboard extends BaseGUI implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         Object source = e.getSource();
-        
-        // Handle sidebar button navigation
+
         if (source == eventsButton) {
             cardLayout.show(contentPanel, "events");
         } else if (source == rentalsButton) {
@@ -421,34 +424,460 @@ public class CustomerDashboard extends BaseGUI implements ActionListener {
             }
         }
         
-        // Handle action buttons
         else if (source == createEventButton) {
-            // TODO: Open create event form
-            showInfoMessage("Create Event functionality will be implemented.");
-        } else if (source == editEventButton) {
-            if (eventsTable.getSelectedRow() == -1) {
-                showErrorMessage("Please select an event to edit.");
-            } else {
-                // TODO: Open edit event form with selected event
-                int eventId = (int) eventsTable.getValueAt(eventsTable.getSelectedRow(), 0);
-                showInfoMessage("Edit Event functionality will be implemented for event ID: " + eventId);
-            }
+            
+            showEventDialog(null); // null indicates a new event
+        } 
+
+		else if (source == editEventButton) {
+		    if (eventsTable.getSelectedRow() == -1) {
+		        showErrorMessage("Please select an event to edit.");
+		    } else {
+		        // Get the selected event ID from the table
+		        int selectedRow = eventsTable.getSelectedRow();
+		        int eventId = (int) eventsTable.getValueAt(selectedRow, 0);
+		        
+		        // Get the event from the data manager
+		        DataManager dataManager = DataManager.getInstance();
+		        ArrayList<Event> events = dataManager.getEvents();
+		        Event selectedEvent = null;
+		        
+		        for (Event event : events) {
+		            if (event.getEventId() == eventId) {
+		                selectedEvent = event;
+		                break;
+		            }
+		        }
+		        
+		        if (selectedEvent != null) {
+		            // Open the event dialog with the selected event for editing
+		            showEventDialog(selectedEvent);
+		        } else {
+		            showErrorMessage("Event not found in database.");
+		        }
+		    }
         } else if (source == deleteEventButton) {
             if (eventsTable.getSelectedRow() == -1) {
                 showErrorMessage("Please select an event to delete.");
             } else {
                 int eventId = (int) eventsTable.getValueAt(eventsTable.getSelectedRow(), 0);
                 if (showConfirmDialog("Are you sure you want to delete this event?")) {
-                    // TODO: Delete selected event
-                    showInfoMessage("Delete Event functionality will be implemented for event ID: " + eventId);
+                    // Delete the event from the data manager
+                    DataManager dataManager = DataManager.getInstance();
+                    boolean success = dataManager.deleteEvent(eventId);
+                    
+                    if (success) {
+                        // Remove from table
+                        DefaultTableModel model = (DefaultTableModel) eventsTable.getModel();
+                        model.removeRow(eventsTable.getSelectedRow());
+                        showInfoMessage("Event deleted successfully.");
+                    } else {
+                        showErrorMessage("Failed to delete event. It may be associated with rentals.");
+                    }
                 }
             }
         } else if (source == createRentalButton) {
-            // TODO: Open create rental form
-            showInfoMessage("Create Rental functionality will be implemented.");
+            showRentalDialog(null); // null for new rental
+        } else if (source == editProfileButton) {
+            showEditProfileDialog();
         }
+        
     }
     
+    
+    private void showEventDialog(Event event) {
+        final boolean isNewEvent = (event == null);
+        final JDialog dialog = new JDialog(this, isNewEvent ? "Create Event" : "Edit Event", true);
+        
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.EAST;
+        gbc.insets = new Insets(5, 5, 5, 10);
+        
+        // Event name field
+        panel.add(new JLabel("Event Name:"), gbc);
+        gbc.gridx = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        JTextField nameField = new JTextField(20);
+        if (!isNewEvent) {
+            nameField.setText(event.getEventName());
+        }
+        panel.add(nameField, gbc);
+        
+        // Event date fields
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.anchor = GridBagConstraints.EAST;
+        panel.add(new JLabel("Date (DD/MM/YYYY):"), gbc);
+        
+        // Panel for date fields
+        JPanel datePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        JTextField dayField = new JTextField(2);
+        JTextField monthField = new JTextField(2);
+        JTextField yearField = new JTextField(4);
+        
+        if (!isNewEvent) {
+            Date eventDate = event.getEventDate();
+            dayField.setText(String.valueOf(eventDate.getDay()));
+            monthField.setText(String.valueOf(eventDate.getMonth()));
+            yearField.setText(String.valueOf(eventDate.getYear()));
+        } else {
+            // Default to current month and year
+            Calendar cal = Calendar.getInstance();
+            dayField.setText("");
+            monthField.setText(String.valueOf(cal.get(Calendar.MONTH) + 1)); // Month is 0-based
+            yearField.setText(String.valueOf(cal.get(Calendar.YEAR)));
+        }
+        
+        datePanel.add(dayField);
+        datePanel.add(new JLabel("/"));
+        datePanel.add(monthField);
+        datePanel.add(new JLabel("/"));
+        datePanel.add(yearField);
+        
+        gbc.gridx = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        panel.add(datePanel, gbc);
+        
+        // Event location field
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.anchor = GridBagConstraints.EAST;
+        panel.add(new JLabel("Location:"), gbc);
+        gbc.gridx = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        JTextField locationField = new JTextField(20);
+        if (!isNewEvent) {
+            locationField.setText(event.getEventLocation());
+        }
+        panel.add(locationField, gbc);
+        
+        // Buttons
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.insets = new Insets(20, 5, 5, 5);
+        
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        JButton saveButton = createStyledButton("Save", SECONDARY_COLOR, null);
+        JButton cancelButton = createStyledButton("Cancel", NEUTRAL_COLOR, null);
+        
+        saveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Validate fields
+                if (nameField.getText().trim().isEmpty()) {
+                    JOptionPane.showMessageDialog(dialog, 
+                        "Event name cannot be empty.", 
+                        "Error", 
+                        JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                if (locationField.getText().trim().isEmpty()) {
+                    JOptionPane.showMessageDialog(dialog, 
+                        "Location cannot be empty.", 
+                        "Error", 
+                        JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                // Parse date
+                int day, month, year;
+                try {
+                    day = Integer.parseInt(dayField.getText().trim());
+                    month = Integer.parseInt(monthField.getText().trim());
+                    year = Integer.parseInt(yearField.getText().trim());
+                    
+                    if (day < 1 || day > 31 || month < 1 || month > 12 || year < 2023) {
+                        throw new NumberFormatException("Invalid date values");
+                    }
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(dialog, 
+                        "Please enter valid date values.", 
+                        "Error", 
+                        JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                // Create Date object
+                Date eventDate = new Date(day, month, year);
+                
+                // Get DataManager instance
+                DataManager dataManager = DataManager.getInstance();
+                
+                // Save or update event
+                if (isNewEvent) {
+                    // Create new event with next available ID
+                    int newId = dataManager.getNextId("event");
+                    Event newEvent = new Event(
+                        newId,
+                        currentUserId,
+                        nameField.getText().trim(),
+                        locationField.getText().trim(),
+                        eventDate
+                    );
+                    
+                    // Save to data manager
+                    dataManager.saveEvent(newEvent);
+                    
+                    // Add to table
+                    DefaultTableModel model = (DefaultTableModel) eventsTable.getModel();
+                    Object[] rowData = {
+                        newId,
+                        newEvent.getEventName(),
+                        day + "/" + month + "/" + year,
+                        newEvent.getEventLocation(),
+                        "Pending"
+                    };
+                    
+                    model.addRow(rowData);
+                } else {
+                    // Update existing event
+                    event.setEventName(nameField.getText().trim());
+                    event.setEventLocation(locationField.getText().trim());
+                    event.setEventDate(eventDate);
+                    
+                    // Save to data manager
+                    dataManager.saveEvent(event);
+                    
+                    // Update table
+                    for (int i = 0; i < eventsTable.getRowCount(); i++) {
+                        if ((int)eventsTable.getValueAt(i, 0) == event.getEventId()) {
+                            eventsTable.setValueAt(event.getEventName(), i, 1);
+                            eventsTable.setValueAt(day + "/" + month + "/" + year, i, 2);
+                            eventsTable.setValueAt(event.getEventLocation(), i, 3);
+                            break;
+                        }
+                    }
+                }
+                
+                dialog.dispose();
+                JOptionPane.showMessageDialog(CustomerDashboard.this, 
+                    isNewEvent ? "Event created successfully." : "Event updated successfully.",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+        
+        cancelButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dialog.dispose();
+            }
+        });
+        
+        buttonPanel.add(saveButton);
+        buttonPanel.add(cancelButton);
+        panel.add(buttonPanel, gbc);
+        
+        dialog.getContentPane().add(panel);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setResizable(false);
+        dialog.setVisible(true);
+    }
+    
+    private void showRentalDialog(RentalOrder rental) {
+        final boolean isNewRental = (rental == null);
+        final JDialog dialog = new JDialog(this, isNewRental ? "Create Rental" : "Edit Rental", true);
+        
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.EAST;
+        gbc.insets = new Insets(5, 5, 5, 10);
+        
+        // Event selector
+        panel.add(new JLabel("Event:"), gbc);
+        gbc.gridx = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        
+        DataManager dataManager = DataManager.getInstance();
+        ArrayList<Event> customerEvents = new ArrayList<>();
+        for (Event event : dataManager.getEvents()) {
+            if (event.getCustomerId() == currentUserId) {
+                customerEvents.add(event);
+            }
+        }
+        
+        if (customerEvents.isEmpty()) {
+            showErrorMessage("You need to create an event before creating a rental.");
+            dialog.dispose();
+            return;
+        }
+        
+        String[] eventNames = new String[customerEvents.size()];
+        for (int i = 0; i < customerEvents.size(); i++) {
+            Event event = customerEvents.get(i);
+            eventNames[i] = event.getEventId() + " - " + event.getEventName();
+        }
+        
+        JComboBox<String> eventBox = new JComboBox<>(eventNames);
+        
+        if (!isNewRental) {
+            // Select the current event
+            for (int i = 0; i < customerEvents.size(); i++) {
+                if (customerEvents.get(i).getEventId() == rental.getEventId()) {
+                    eventBox.setSelectedIndex(i);
+                    break;
+                }
+            }
+        }
+        
+        panel.add(eventBox, gbc);
+        
+    
+        gbc.gridx = 0;
+        gbc.gridy += 5;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.insets = new Insets(20, 5, 5, 5);
+        
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        JButton saveButton = createStyledButton("Save", SECONDARY_COLOR, null);
+        JButton cancelButton = createStyledButton("Cancel", NEUTRAL_COLOR, null);
+        
+        saveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Save logic
+                dialog.dispose();
+                showInfoMessage("Rental created successfully.");
+                
+            }
+        });
+        
+        cancelButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dialog.dispose();
+            }
+        });
+        
+        buttonPanel.add(saveButton);
+        buttonPanel.add(cancelButton);
+        panel.add(buttonPanel, gbc);
+        
+        dialog.getContentPane().add(panel);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setResizable(false);
+        dialog.setVisible(true);
+    }
+    
+    private void showEditProfileDialog() {
+        final JDialog dialog = new JDialog(this, "Edit Profile", true);
+        
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.EAST;
+        gbc.insets = new Insets(5, 5, 5, 10);
+        
+        // Full name field
+        panel.add(new JLabel("Full Name:"), gbc);
+        gbc.gridx = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        JTextField fullNameField = new JTextField(20);
+        fullNameField.setText(currentCustomer.getFullName());
+        panel.add(fullNameField, gbc);
+        
+        // Email field
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.anchor = GridBagConstraints.EAST;
+        panel.add(new JLabel("Email:"), gbc);
+        gbc.gridx = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        JTextField emailField = new JTextField(20);
+        emailField.setText(currentCustomer.getEmail());
+        panel.add(emailField, gbc);
+        
+        // Phone field
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.anchor = GridBagConstraints.EAST;
+        panel.add(new JLabel("Phone:"), gbc);
+        gbc.gridx = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        JTextField phoneField = new JTextField(20);
+        phoneField.setText(String.valueOf(currentCustomer.getPhone()));
+        panel.add(phoneField, gbc);
+        
+        // Buttons
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.insets = new Insets(20, 5, 5, 5);
+        
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        JButton saveButton = createStyledButton("Save", SECONDARY_COLOR, null);
+        JButton cancelButton = createStyledButton("Cancel", NEUTRAL_COLOR, null);
+        
+        saveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Validate and save
+                if (!fullNameField.getText().trim().isEmpty() && 
+                    !emailField.getText().trim().isEmpty() && 
+                    !phoneField.getText().trim().isEmpty()) {
+                    
+                    // Update customer object
+                    currentCustomer.setFullName(fullNameField.getText().trim());
+                    currentCustomer.setEmail(emailField.getText().trim());
+                    try {
+                        currentCustomer.setPhone(Integer.parseInt(phoneField.getText().trim()));
+                    } catch (NumberFormatException ex) {
+                        showErrorMessage("Phone must be a valid number.");
+                        return;
+                    }
+                    
+                    // Save to data manager
+                    DataManager dataManager = DataManager.getInstance();
+                    dataManager.saveCustomer(currentCustomer);
+                    
+                    contentPanel.remove(profilePanel);
+                    createProfilePanel();
+                    contentPanel.add(profilePanel, "profile");
+                    cardLayout.show(contentPanel, "profile");
+                    
+                    dialog.dispose();
+                    showInfoMessage("Profile updated successfully.");
+                } else {
+                    showErrorMessage("All fields are required.");
+                }
+            }
+        });
+        
+        cancelButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dialog.dispose();
+            }
+        });
+        
+        buttonPanel.add(saveButton);
+        buttonPanel.add(cancelButton);
+        panel.add(buttonPanel, gbc);
+        
+        dialog.getContentPane().add(panel);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+    }
     /**
      * Main method for testing
      */

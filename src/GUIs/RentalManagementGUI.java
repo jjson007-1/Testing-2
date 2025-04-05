@@ -53,6 +53,7 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
     private JButton deleteRentalButton;
     private JButton generateInvoiceButton;
     private JButton backButton;
+    private JFrame previousScreen;
     
     // Data manager
     private DataManager dataManager;
@@ -66,13 +67,15 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
     private final Color NEUTRAL_COLOR = new Color(70, 70, 70);
     
     /**
-     * Constructor
+     * Constructors
      */
-    public RentalManagementGUI() {
+    public RentalManagementGUI(JFrame previousScreen) {
         this.setTitle("Rental Management");
         this.setSize(1000, 700);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLocationRelativeTo(null);
+        this.previousScreen = previousScreen;
+
         
         // Get data manager instance
         dataManager = DataManager.getInstance();
@@ -82,6 +85,12 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
         setupEventHandlers();
         
         this.setVisible(true);
+    }
+    
+    public RentalManagementGUI() {
+        this(new WelcomeGUI());
+        // Hide the WelcomeGUI created as the default previous screen
+        previousScreen.setVisible(false);
     }
     
     /**
@@ -245,7 +254,6 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
     
     /**
      * Display equipment for the selected rental
-     * @param rental The selected rental order
      */
     private void displayRentalEquipment(RentalOrder rental) {
         // Clear the equipment table
@@ -253,9 +261,6 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
         
         if (rental == null) return;
         
-        // In a real implementation, this would fetch the actual equipment items
-        // associated with the rental from a database or serialized file.
-        // For now, we'll show sample data from available equipment
         ArrayList<Equipment> equipmentList = dataManager.getEquipment();
         
         // Show first 3 equipment items for demo purposes
@@ -289,8 +294,6 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
     
     /**
      * Find rental order by ID
-     * @param rentalId The rental ID to find
-     * @return The rental order object or null if not found
      */
     private RentalOrder getRentalById(int rentalId) {
         ArrayList<RentalOrder> rentals = dataManager.getRentals();
@@ -304,8 +307,6 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
     
     /**
      * Find event by ID
-     * @param eventId The event ID to find
-     * @return The event name or "Unknown" if not found
      */
     private String getEventNameById(int eventId) {
         ArrayList<Event> events = dataManager.getEvents();
@@ -319,8 +320,6 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
     
     /**
      * Find customer by ID
-     * @param customerId The customer ID to find
-     * @return The customer name or "Unknown" if not found
      */
     private String getCustomerNameById(int customerId) {
         ArrayList<Customer> customers = dataManager.getCustomers();
@@ -386,15 +385,18 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
                     JOptionPane.ERROR_MESSAGE);
             }
         } else if (source == backButton) {
-            // Go back to previous screen
             this.dispose();
-            new WelcomeGUI();
+            
+            if (previousScreen != null) {
+                previousScreen.setVisible(true);
+            } else {
+                new WelcomeGUI(); 
+            }
         }
     }
     
     /**
      * Delete rental with confirmation
-     * @param rentalId The rental ID to delete
      */
     private void deleteRental(int rentalId) {
         boolean success = dataManager.deleteRental(rentalId);
@@ -425,7 +427,6 @@ public class RentalManagementGUI extends JFrame implements ActionListener {
     
     /**
      * Show dialog for adding or editing rental
-     * @param rental Rental to edit, or null for new rental
      */
     private void showRentalDialog(RentalOrder rental) {
         final boolean isNewRental = (rental == null);

@@ -44,6 +44,9 @@ public class ReportGUI extends JFrame implements ActionListener {
     private JButton generateButton;
     private JButton exportButton;
     private JButton backButton;
+    private JFrame previousScreen;
+
+
     
     // Data manager
     private DataManager dataManager;
@@ -54,13 +57,15 @@ public class ReportGUI extends JFrame implements ActionListener {
     private final Color NEUTRAL_COLOR = new Color(70, 70, 70);
     
     /**
-     * Constructor
+     * Constructors
      */
-    public ReportGUI() {
+    public ReportGUI(JFrame previousScreen) {
         this.setTitle("Reports");
         this.setSize(800, 600);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLocationRelativeTo(null);
+        this.previousScreen = previousScreen;
+
         
         // Get data manager instance
         dataManager = DataManager.getInstance();
@@ -72,6 +77,11 @@ public class ReportGUI extends JFrame implements ActionListener {
         this.setVisible(true);
     }
     
+    public ReportGUI() {
+        this(new WelcomeGUI());
+        // Hide the WelcomeGUI created as the default previous screen
+        previousScreen.setVisible(false);
+    }
     /**
      * Initialize all UI components
      */
@@ -183,9 +193,13 @@ public class ReportGUI extends JFrame implements ActionListener {
                 "Information", 
                 JOptionPane.INFORMATION_MESSAGE);
         } else if (source == backButton) {
-            // Go back to previous screen
             this.dispose();
-            new WelcomeGUI();
+            
+            if (previousScreen != null) {
+                previousScreen.setVisible(true);
+            } else {
+                new WelcomeGUI(); 
+            }
         }
     }
     
@@ -207,8 +221,6 @@ public class ReportGUI extends JFrame implements ActionListener {
                 return;
             }
             
-            // In a full implementation, we would parse the dates properly
-            // For simplicity, we'll just proceed with the report generation
             
             String reportType = (String) reportTypeBox.getSelectedItem();
             

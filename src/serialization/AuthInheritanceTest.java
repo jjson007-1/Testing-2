@@ -55,7 +55,7 @@ public class AuthInheritanceTest {
                                       "789 Customer St", 1);
         
         // Create Customer from existing User
-        Customer customerFromUser = new Customer(user, 2);
+        Customer customerFromUser = new Customer();
         
         // Print objects
         System.out.println("  User: " + user);
@@ -190,7 +190,7 @@ public class AuthInheritanceTest {
     }
     
     /**
-     * Simulate user authentication
+     * User authentication
      */
     private static User authenticateUser(ArrayList<User> users, String username, String password) {
         for (User user : users) {

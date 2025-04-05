@@ -12,7 +12,6 @@ import java.util.Date;
 
 /**
  * The RentalOrder class represents rental transactions between customers and equipment.
- * This corresponds to the "rentalorder" table in the database.
  */
 public class RentalOrder implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -124,12 +123,11 @@ public class RentalOrder implements Serializable {
     
     /**
      * Calculates the rental duration in days
-     * @return number of days between rental and return dates
      */
     /*public int calculateDuration() {
         // 86400000 = 1000 * 60 * 60 * 24 (milliseconds in a day)
         return (int)((returnDate.getTime() - rentalDate.getTime()) / 86400000) + 1;
-    }*/
+    }
     
     /**
      * Saves rental order records to file
@@ -187,8 +185,6 @@ public class RentalOrder implements Serializable {
     
     /**
      * Find rental orders for a specific customer
-     * @param customerId the customer ID to search for
-     * @return list of rental orders for the customer
      */
     public static ArrayList<RentalOrder> findByCustomerId(int customerId) {
         ArrayList<RentalOrder> allRentalOrders = readFromRentalOrdersFile();
@@ -205,8 +201,6 @@ public class RentalOrder implements Serializable {
     
     /**
      * Find rental orders for a specific event
-     * @param eventId the event ID to search for
-     * @return list of rental orders for the event
      */
     public static ArrayList<RentalOrder> findByEventId(int eventId) {
         ArrayList<RentalOrder> allRentalOrders = readFromRentalOrdersFile();

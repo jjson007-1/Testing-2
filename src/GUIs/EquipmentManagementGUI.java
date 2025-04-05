@@ -45,6 +45,7 @@ public class EquipmentManagementGUI extends JFrame implements ActionListener {
     private JButton deleteButton;
     private JButton maintenanceButton;
     private JButton backButton;
+    private JFrame previousScreen;
     
     // Data manager
     private DataManager dataManager;
@@ -62,11 +63,13 @@ public class EquipmentManagementGUI extends JFrame implements ActionListener {
     /**
      * Constructor
      */
-    public EquipmentManagementGUI() {
+    public EquipmentManagementGUI(JFrame previousScreen) {
         this.setTitle("Equipment Management");
         this.setSize(900, 600);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLocationRelativeTo(null);
+        this.previousScreen = previousScreen;
+
         
         // Get data manager instance
         dataManager = DataManager.getInstance();
@@ -78,6 +81,11 @@ public class EquipmentManagementGUI extends JFrame implements ActionListener {
         this.setVisible(true);
     }
     
+    public EquipmentManagementGUI() {
+        this(new WelcomeGUI());
+        // Hide the WelcomeGUI created as the default previous screen
+        previousScreen.setVisible(false);
+    }
     /**
      * Initialize all UI components
      */
@@ -235,16 +243,19 @@ public class EquipmentManagementGUI extends JFrame implements ActionListener {
                     JOptionPane.ERROR_MESSAGE);
             }
         } else if (source == backButton) {
-            // Go back to previous screen
+            // Go back to previous screen instead of always to WelcomeGUI
             this.dispose();
-            new WelcomeGUI();
+            
+            if (previousScreen != null) {
+                previousScreen.setVisible(true);
+            } else {
+                new WelcomeGUI(); // Fallback if previous screen is null
+            }
         }
     }
     
     /**
      * Find equipment by ID
-     * @param equipmentId The equipment ID to find
-     * @return The equipment object or null if not found
      */
     private Equipment getEquipmentById(int equipmentId) {
         ArrayList<Equipment> equipmentList = dataManager.getEquipment();
@@ -258,7 +269,6 @@ public class EquipmentManagementGUI extends JFrame implements ActionListener {
     
     /**
      * Delete equipment
-     * @param equipmentId The equipment ID to delete
      */
     private void deleteEquipment(int equipmentId) {
         boolean success = dataManager.deleteEquipment(equipmentId);
@@ -286,7 +296,6 @@ public class EquipmentManagementGUI extends JFrame implements ActionListener {
     
     /**
      * Show dialog for adding or editing equipment
-     * @param equipment Equipment to edit, or null for new equipment
      */
     private void showEquipmentDialog(Equipment equipment) {
         final boolean isNewEquipment = (equipment == null);
@@ -510,7 +519,6 @@ public class EquipmentManagementGUI extends JFrame implements ActionListener {
     
     /**
      * Show maintenance dialog for equipment
-     * @param equipment The equipment to maintain
      */
     private void showMaintenanceDialog(Equipment equipment) {
         final JDialog dialog = new JDialog(this, "Schedule Maintenance", true);

@@ -103,10 +103,9 @@ public class Guest implements Serializable {
 				try {
 					guest = (Guest) objIn.readObject();
 					if(guest != null) {
-						//Add employee to the list of users
 						guestsList.add(guest);
 					}else if(guest == null) {
-						break; //Leave the while loop
+						break; 
 					}
 				} catch (ClassNotFoundException e) {
 					System.out.println("Object could not be converted to a User");
